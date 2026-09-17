@@ -15,7 +15,7 @@ extern "C" {
 typedef struct gm82_action_table gm82_action_table;
 
 #define GM82_MAX_INSTANCES 2048
-#define GM82_MAX_CUSTOM_VARS 32
+#define GM82_MAX_CUSTOM_VARS 256
 
 typedef struct {
     char   name[32];
