@@ -83,3 +83,78 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
     }
     return out->count;
 }
+
+void gm82_gml_fragment_list_init(gm82_gml_fragment_list *L) {
+    memset(L, 0, sizeof(*L));
+}
+
+static int looks_like_gml(const char *t, int n) {
+    /* require at least one strong token */
+    static const char *keys[] = {
+        "instance_", "motion_", "keyboard_", "sprite_index", "hspeed", "vspeed",
+        "room_goto", "place_free", "place_meeting", "image_index", "gravity",
+        "if ", "x =", "y =", "x=", "y=", "argument0", NULL
+    };
+    for (int k = 0; keys[k]; k++) {
+        const char *p = keys[k];
+        int plen = (int)strlen(p);
+        for (int i = 0; i + plen <= n; i++) {
+            int m = 1;
+            for (int j = 0; j < plen; j++) {
+                char a = t[i+j], b = p[j];
+                if (a >= 'A' && a <= 'Z') a = (char)(a - 'A' + 'a');
+                if (b >= 'A' && b <= 'Z') b = (char)(b - 'A' + 'a');
+                if (a != b) { m = 0; break; }
+            }
+            if (m) return 1;
+        }
+    }
+    return 0;
+}
+
+int gm82_harvest_gml_fragments_from_gmk(const uint8_t *data, size_t size,
+                                          gm82_gml_fragment_list *out) {
+    gm82_gml_fragment_list_init(out);
+    if (!data || size < 12) return -1;
+    for (size_t i = 12; i + 2 < size; i++) {
+        if (!(data[i]==0x78 && (data[i+1]==0x9c||data[i+1]==0xda||
+                                data[i+1]==0x01||data[i+1]==0x5e)))
+            continue;
+        size_t ol = 0;
+        uint8_t *d = inflate_at(data + i, size - i, &ol);
+        i += 16;
+        if (!d || ol < 16) { free(d); continue; }
+        for (size_t j = 0; j + 8 < ol; j++) {
+            int32_t n = rd_i32(d + j);
+            if (n < 12 || n > GM82_GML_FRAG_CODE - 1) continue;
+            if (j + 4 + (size_t)n > ol) continue;
+            const uint8_t *s = d + j + 4;
+            int good = 1;
+            for (int k = 0; k < n; k++) {
+                unsigned char c = s[k];
+                if (!(c >= 32 && c < 127) && c != 9 && c != 10 && c != 13) {
+                    good = 0; break;
+                }
+            }
+            if (!good) continue;
+            if (!looks_like_gml((const char *)s, n)) continue;
+            /* dedupe by prefix */
+            int dup = 0;
+            for (int u = 0; u < out->count; u++) {
+                if (out->items[u].length == n &&
+                    memcmp(out->items[u].code, s, (size_t)(n < 32 ? n : 32)) == 0) {
+                    dup = 1; break;
+                }
+            }
+            if (dup) continue;
+            if (out->count >= GM82_GML_FRAG_MAX) { free(d); return out->count; }
+            gm82_gml_fragment *f = &out->items[out->count++];
+            memcpy(f->code, s, (size_t)n);
+            f->code[n] = 0;
+            f->length = n;
+            j += 4 + (size_t)n - 1;
+        }
+        free(d);
+    }
+    return out->count;
+}

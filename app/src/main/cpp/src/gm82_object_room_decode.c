@@ -33,6 +33,12 @@ static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *out_len) {
 
 void gm82_decoded_object_list_free(gm82_decoded_object_list *L) {
     if (!L) return;
+    if (L->items) {
+        for (int i = 0; i < L->count; i++) {
+            for (int e = 0; e < L->items[i].event_count && e < GM82_OBJ_EVENT_MAX; e++)
+                free(L->items[i].events[e].code_snippet);
+        }
+    }
     free(L->items);
     memset(L, 0, sizeof(*L));
 }
@@ -49,7 +55,8 @@ void gm82_decoded_room_list_free(gm82_decoded_room_list *L) {
 int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_object_list *out) {
     memset(out, 0, sizeof(*out));
     if (!data || size < 12) return -1;
-    gm82_decoded_object tmp[256];
+    gm82_decoded_object *tmp = (gm82_decoded_object *)calloc(256, sizeof(gm82_decoded_object));
+    if (!tmp) return -1;
     int n = 0;
 
     for (size_t i = 12; i + 2 < size; i++) {
@@ -67,7 +74,8 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         for (int k = 0; k < slen; k++) if (ns[k] < 32 || ns[k] > 126) ok = 0;
         if (!ok) { free(d); continue; }
         char name[64]; memcpy(name, ns, (size_t)slen); name[slen] = 0;
-        if (strncmp(name, "obj_", 4) != 0) { free(d); continue; }
+        /* Accept obj_*, objName (no underscore), object* */
+        if (strncmp(name, "obj", 3) != 0 && strncmp(name, "object", 6) != 0) { free(d); continue; }
         size_t off = 8 + (size_t)slen + 8;
         int32_t ver = rd_i32(d + off); off += 4;
         if (ver != 430 && ver != 400 && ver != 800) { free(d); continue; }
@@ -80,8 +88,147 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         o->visible = rd_i32(d + off + 8);
         o->depth = rd_i32(d + off + 12);
         o->persistent = (off + 16 + 4 <= ol) ? rd_i32(d + off + 16) : 0;
-        o->parent_index = (off + 20 + 4 <= ol) ? rd_i32(d + off + 20) : -100;
-        o->mask_index = (off + 24 + 4 <= ol) ? rd_i32(d + off + 24) : -1;
+        o->event_count = 0;
+        /* GM8: after object header, for main event type 0..11:
+         *   list of (event_kind, actionlist) ending with event_kind=-1
+         * ver 430 layout: fields then event stream at off+32 */
+        if ((ver == 430 || ver == 400) && off + 32 <= ol) {
+            size_t p = off + 32;
+            /* GM8 always has 12 main event categories (Create..Trigger) */
+            for (int main = 0; main < 12 && p + 4 <= ol; main++) {
+                int safety = 0;
+                while (p + 4 <= ol && safety++ < 48) {
+                    int32_t eid = rd_i32(d + p); p += 4;
+                    if (eid == -1) break; /* end of this main type */
+                    if (p + 8 > ol) break;
+                    int32_t aver = rd_i32(d + p);
+                    if (aver != 400 && aver != 440) {
+                        /* not an action list – back up and end this main */
+                        p -= 4;
+                        break;
+                    }
+                    p += 4;
+                    int32_t acount = rd_i32(d + p); p += 4;
+                    if (acount < 0 || acount > 64) {
+                        break;
+                    }
+
+                    gm82_decoded_event *ev = NULL;
+                    if (o->event_count < GM82_OBJ_EVENT_MAX) {
+                        ev = &o->events[o->event_count];
+                        ev->main_type = main;
+                        ev->event_numb = eid;
+                        ev->action_count = acount;
+                        ev->action_name0[0] = 0;
+                        ev->action_id0 = -1;
+                        ev->action_arg0 = -1;
+                        ev->code_snippet = NULL;
+                        o->event_count++;
+                    }
+
+                    /* Skip/scan action bodies; resync to next -1 at end of this event's list.
+                     * Each action has variable layout; scan for action_* and final -1. */
+                    size_t window_end = p + 1200;
+                    if (window_end > ol) window_end = ol;
+                    size_t q = p;
+                    int found_term = 0;
+                    int actions_seen = 0;
+                    while (q + 4 <= window_end && actions_seen < acount + 4) {
+                        int32_t nlen = rd_i32(d + q);
+                        if (nlen >= 8 && nlen < 48 && q + 4 + (size_t)nlen <= ol) {
+                            const uint8_t *s = d + q + 4;
+                            if (s[0]=='a' && s[1]=='c' && s[2]=='t' && s[3]=='i' &&
+                                s[4]=='o' && s[5]=='n' && s[6]=='_') {
+                                actions_seen++;
+                                if (ev && !ev->action_name0[0]) {
+                                    int L = nlen < 47 ? nlen : 47;
+                                    memcpy(ev->action_name0, s, (size_t)L);
+                                    ev->action_name0[L] = 0;
+                                    if (q >= 8) {
+                                        int32_t maybe_id = rd_i32(d + q - 8);
+                                        if (maybe_id > 0 && maybe_id < 10000)
+                                            ev->action_id0 = maybe_id;
+                                    }
+                                    size_t r = q + 4 + (size_t)nlen;
+                                    for (int t = 0; t < 8 && r + 4 <= ol; t++, r += 4) {
+                                        int32_t v = rd_i32(d + r);
+                                        if (v >= 0 && v < 512) {
+                                            ev->action_arg0 = v;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (rd_i32(d + q) == -1) {
+                            p = q; /* leave -1 for outer loop / next main */
+                            found_term = 1;
+                            break;
+                        }
+                        q += 4;
+                    }
+                    if (!found_term) {
+                        /* advance past window; try continue main types */
+                        p = window_end;
+                        break;
+                    }
+                }
+            }
+        }
+
+        /* Second pass: find execute-code GML strings in object blob */
+        if (o->event_count > 0) {
+            for (size_t q = 0; q + 8 < ol; q++) {
+                int32_t nlen = rd_i32(d + q);
+                if (nlen < 40 || nlen > 2000 || q + 4 + (size_t)nlen > ol) continue;
+                const uint8_t *cs = d + q + 4;
+                int ok = 1;
+                for (int k = 0; k < nlen; k++) {
+                    uint8_t ch = cs[k];
+                    if (ch == 0) { ok = 0; break; }
+                    if (ch < 9 || (ch > 13 && ch < 32 && ch != 9)) { ok = 0; break; }
+                }
+                if (!ok) continue;
+                /* require GML markers */
+                int has = 0;
+                for (int k = 0; k + 8 < nlen; k++) {
+                    if (cs[k]=='k' && cs[k+1]=='e' && cs[k+2]=='y' && cs[k+3]=='b' &&
+                        cs[k+4]=='o' && cs[k+5]=='a' && cs[k+6]=='r' && cs[k+7]=='d') {
+                        has = 1; break;
+                    }
+                    if (cs[k]=='p' && cs[k+1]=='l' && cs[k+2]=='a' && cs[k+3]=='c' &&
+                        cs[k+4]=='e' && cs[k+5]=='_' && cs[k+6]=='f') {
+                        has = 1; break;
+                    }
+                    if (cs[k]=='s' && cs[k+1]=='p' && cs[k+2]=='r' && cs[k+3]=='i' &&
+                        cs[k+4]=='t' && cs[k+5]=='e' && cs[k+6]=='_' && cs[k+7]=='i') {
+                        has = 1; break;
+                    }
+                    if (cs[k]=='v' && cs[k+1]=='s' && cs[k+2]=='p' && cs[k+3]=='e' &&
+                        cs[k+4]=='e' && cs[k+5]=='d') {
+                        has = 1; break;
+                    }
+                    if (cs[k]=='h' && cs[k+1]=='s' && cs[k+2]=='p' && cs[k+3]=='e' &&
+                        cs[k+4]=='e' && cs[k+5]=='d') {
+                        has = 1; break;
+                    }
+                }
+                if (!has) continue;
+                /* attach to first event lacking snippet, prefer step (3) if present */
+                gm82_decoded_event *target = &o->events[0];
+                for (int ei = 0; ei < o->event_count; ei++) {
+                    if (o->events[ei].main_type == 3) { target = &o->events[ei]; break; }
+                }
+                if (!target->code_snippet || (int)strlen(target->code_snippet) < 20) {
+                    free(target->code_snippet);
+                    target->code_snippet = (char *)malloc((size_t)nlen + 1);
+                    if (target->code_snippet) {
+                        memcpy(target->code_snippet, cs, (size_t)nlen);
+                        target->code_snippet[nlen] = 0;
+                    }
+                }
+            }
+        }
         free(d);
     }
     out->count = n;
@@ -90,6 +237,7 @@ int gm82_decode_objects_from_gmk(const uint8_t *data, size_t size, gm82_decoded_
         if (out->items) memcpy(out->items, tmp, (size_t)n * sizeof(*tmp));
         else out->count = 0;
     }
+    free(tmp);
     return out->count;
 }
 
@@ -115,7 +263,11 @@ int gm82_decode_rooms_from_gmk(const uint8_t *data, size_t size, gm82_decoded_ro
         for (int k = 0; k < slen; k++) if (ns[k] < 32 || ns[k] > 126) ok = 0;
         if (!ok) { free(d); continue; }
         char name[64]; memcpy(name, ns, (size_t)slen); name[slen] = 0;
-        if (strncmp(name, "room", 4) != 0) { free(d); continue; }
+        /* room*, r001, r_menu*, level* – zelda uses r001 style */
+        int name_ok = (strncmp(name, "room", 4) == 0) ||
+                      (name[0] == 'r' && (name[1] == '_' || (name[1] >= '0' && name[1] <= '9'))) ||
+                      (strncmp(name, "level", 5) == 0);
+        if (!name_ok) { free(d); continue; }
         size_t off = 8 + (size_t)slen + 8;
         int32_t ver = rd_i32(d + off); off += 4;
         if (ver != 541 && ver != 800 && ver != 520) { free(d); continue; }

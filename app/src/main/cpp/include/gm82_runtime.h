@@ -27,6 +27,8 @@ typedef struct {
     double  friction;
     int32_t image_index;
     double  image_speed;
+    double  image_xscale;
+    double  image_yscale;
     int32_t depth;
     int32_t solid;
     int32_t visible;
@@ -40,10 +42,6 @@ typedef struct {
     double  timeline_position;
     double  timeline_speed;
     int32_t timeline_running;
-    /* User variables storage */
-    char    var_names[64][32];
-    double  var_values[64];
-    int32_t var_count;
 } gm82_instance;
 
 typedef struct {
@@ -62,7 +60,6 @@ typedef struct {
     const gm82_decoded_background_list *backgrounds;
     const gm82_decoded_room_list       *rooms;
     const gm82_action_table            *actions;
-    const struct gm82_script_list      *scripts;
 
     int32_t frame;
     int32_t running;
@@ -80,7 +77,6 @@ void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_room_list *rooms,
     const gm82_action_table *actions);
 void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_list *groups);
-void gm82_runtime_bind_scripts(gm82_runtime *rt, const struct gm82_script_list *scripts);
 /* Fire user event 0..11 on all instances (or self if provided via events later) */
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
 

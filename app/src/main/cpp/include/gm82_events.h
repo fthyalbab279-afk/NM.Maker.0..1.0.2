@@ -51,18 +51,24 @@ void gm82_events_fire_create_all(gm82_runtime *rt);
 
 /* Fire Step (begin/normal/end simplified into one) for all alive instances */
 void gm82_events_fire_step_all(gm82_runtime *rt);
-
-/* Fire specific event on all alive instances */
-void gm82_events_fire_event_all(gm82_runtime *rt, int32_t event_type, int32_t event_numb);
-
-/* Fire Collision event between two instances */
-void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst_a, gm82_instance *inst_b);
+void gm82_events_fire_collision(gm82_runtime *rt, gm82_instance *inst, gm82_instance *other);
 
 /* Lookup behavior for object index */
 const gm82_behavior *gm82_events_find_behavior(gm82_runtime *rt, int32_t object_index);
+
+/* Bind GML source to run on Step for objects whose name starts with prefix.
+ * Replaces C behavior step when both exist for that instance (GML preferred).
+ * Max 16 bindings. code pointer must remain valid. */
+void gm82_events_clear_gml_bindings(void);
+bool gm82_events_bind_gml_step(const char *object_name_prefix, const char *code);
+bool gm82_events_bind_gml_create(const char *object_name_prefix, const char *code);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+
+/* Best-effort: scan GMK object resource blobs for embedded GML-like strings
+ * and bind them as Create events (not full event-type decode). */
+int gm82_events_autobind_gml_from_gmk(const uint8_t *data, size_t size);

@@ -39,9 +39,6 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
 /* Execute a named action on self (subset of common DnD names) */
 bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char *name);
 
-/* Fire scanned actions for an object matching specific event type and number */
-void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self, int32_t event_type, int32_t event_numb, const gm82_action_table *table);
-
 /* Fire all scanned Create actions for an object index (name match) */
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table);
 void gm82_actions_fire_step(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table);
