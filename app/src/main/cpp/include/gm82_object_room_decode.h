@@ -9,6 +9,17 @@
 extern "C" {
 #endif
 
+#define GM82_OBJ_EVENT_MAX 64
+typedef struct {
+    int32_t main_type; /* 0=Create … 3=Step … 8=Draw */
+    int32_t event_numb;
+    int32_t action_count; /* from header if parseable, else -1 */
+    char action_name0[48]; /* first action_* name if found */
+    int32_t action_id0;
+    int32_t action_arg0; /* first numeric arg best-effort */
+    char *code_snippet; /* heap GML execute-code if found (nullable) */
+} gm82_decoded_event;
+
 typedef struct {
     char    name[64];
     int32_t sprite_index;   /* -1 if none */
@@ -16,8 +27,8 @@ typedef struct {
     int32_t visible;
     int32_t depth;
     int32_t persistent;
-    int32_t parent_index;  /* -100 if none, parent object for inheritance */
-    int32_t mask_index;    /* -1 if same as sprite_index */
+    int32_t event_count;
+    gm82_decoded_event events[GM82_OBJ_EVENT_MAX];
 } gm82_decoded_object;
 
 typedef struct {

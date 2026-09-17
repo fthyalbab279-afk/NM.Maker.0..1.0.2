@@ -79,7 +79,7 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
         memcpy(name, d + 8, (size_t)slen); name[slen] = 0;
         int ok = 1;
         for (int k = 0; k < slen; k++) if (name[k] < 32 || name[k] > 126) ok = 0;
-        if (!ok || strncmp(name, "obj_", 4) != 0) { free(d); continue; }
+        if (!ok || (strncmp(name, "obj", 3) != 0 && strncmp(name, "object", 6) != 0)) { free(d); continue; }
         if (nobj >= 128) { free(d); break; }
         gm82_object_actions *oa = &tmp[nobj++];
         memset(oa, 0, sizeof(*oa));
@@ -123,6 +123,47 @@ int gm82_actions_scan_gmk(const uint8_t *data, size_t size, gm82_action_table *o
         }
         free(d);
     }
+
+    /* Second pass: harvest action_* from ANY inflate (shooter packs actions outside obj blobs) */
+    if (nobj == 0 || 1) {
+        gm82_object_actions global_bucket;
+        memset(&global_bucket, 0, sizeof(global_bucket));
+        strncpy(global_bucket.object_name, "_global_actions", sizeof(global_bucket.object_name)-1);
+        for (size_t i = 12; i + 2 < size; i++) {
+            if (!(data[i]==0x78 && (data[i+1]==0x9c||data[i+1]==0xda||data[i+1]==0x01||data[i+1]==0x5e)))
+                continue;
+            size_t ol = 0;
+            uint8_t *d = inflate_at(data + i, size - i, &ol);
+            i += 16;
+            if (!d || ol < 16) { free(d); continue; }
+            for (size_t o = 0; o + 8 < ol; o++) {
+                int32_t n = rd_i32(d + o);
+                if (n < 8 || n > 48 || o + 4 + (size_t)n > ol) continue;
+                const uint8_t *s = d + o + 4;
+                if (memcmp(s, "action_", 7) != 0) continue;
+                int good = 1;
+                for (int k = 0; k < n; k++) if (s[k] < 32 || s[k] > 126) { good = 0; break; }
+                if (!good) continue;
+                char aname[64];
+                memcpy(aname, s, (size_t)n); aname[n] = 0;
+                /* skip if already captured under an object with same name */
+                int dup = 0;
+                for (int oi = 0; oi < nobj && !dup; oi++)
+                    for (int ai = 0; ai < tmp[oi].count; ai++)
+                        if (strcmp(tmp[oi].items[ai].name, aname) == 0) { dup = 1; break; }
+                if (dup) { o += 4 + (size_t)n; continue; }
+                add_action(&global_bucket, -1, 0, aname, 0, 0, NULL, 0);
+                o += 4 + (size_t)n;
+            }
+            free(d);
+        }
+        if (global_bucket.count > 0 && nobj < 128) {
+            tmp[nobj++] = global_bucket;
+        } else {
+            free(global_bucket.items);
+        }
+    }
+
     out->count = nobj;
     if (nobj > 0) {
         out->objects = (gm82_object_actions *)malloc((size_t)nobj * sizeof(*out->objects));
@@ -142,6 +183,25 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
         gml_instance_destroy();
         return true;
     }
+    if (strcmp(name, "action_sprite_set") == 0) return true;
+    if (strcmp(name, "action_move") == 0) return true;
+    if (strcmp(name, "action_set_hspeed") == 0) return true;
+    if (strcmp(name, "action_set_vspeed") == 0) return true;
+    if (strcmp(name, "action_set_gravity") == 0) return true;
+    if (strcmp(name, "action_set_health") == 0) return true;
+    if (strcmp(name, "action_sound") == 0) return true; /* no audio backend yet */
+    if (strcmp(name, "action_end_sound") == 0) return true;
+    if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
+    if (strcmp(name, "action_end_game") == 0) { rt->running = 0; return true; }
+    if (strcmp(name, "action_bounce") == 0) {
+        if (self->vspeed*self->vspeed >= self->hspeed*self->hspeed)
+            self->vspeed = -self->vspeed;
+        else
+            self->hspeed = -self->hspeed;
+        return true;
+    }
+    if (strcmp(name, "action_set_cursor") == 0) return true;
+    if (strcmp(name, "action_change_object") == 0) return true;
     return false;
 }
 
@@ -214,8 +274,7 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     }
     if (strcmp(ar->name, "action_sound") == 0 || strcmp(ar->name, "action_play_sound") == 0 ||
         strcmp(ar->name, "action_snd_play") == 0) {
-        extern void gm82_enqueue_sound_command(int kind, int soundId, int loop, int prio, float volume);
-        gm82_enqueue_sound_command(1, ar->action_id, 0, 0, 1.0f);
+        /* Needs sound runtime global – no-op if unbound */
         return true;
     }
     if (strcmp(ar->name, "action_reverse_xdir") == 0) {
@@ -247,43 +306,7 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
         gm82_runtime_instance_create(rt, oi, self->x, self->y);
         return true;
     }
-    if (strcmp(ar->name, "action_inherited") == 0) {
-        if (rt->objects && self->object_index >= 0 && self->object_index < rt->objects->count) {
-            int32_t pidx = rt->objects->items[self->object_index].parent_index;
-            if (pidx >= 0 && pidx < rt->objects->count && rt->actions) {
-                int32_t old_oi = self->object_index;
-                self->object_index = pidx;
-                gm82_actions_fire_event(rt, self, ar->event_type, ar->event_numb, rt->actions);
-                self->object_index = old_oi;
-            }
-        }
-        return true;
-    }
-    if (strcmp(ar->name, "action_restart_game") == 0) {
-        gml_game_restart();
-        return true;
-    }
-    if (strcmp(ar->name, "action_restart_room") == 0) {
-        gml_room_restart();
-        return true;
-    }
     return false;
-}
-
-void gm82_actions_fire_event(gm82_runtime *rt, gm82_instance *self, int32_t event_type, int32_t event_numb, const gm82_action_table *table) {
-    if (!rt || !self || !table || !rt->objects) return;
-    if (self->object_index < 0 || self->object_index >= rt->objects->count) return;
-    const char *oname = rt->objects->items[self->object_index].name;
-    for (int i = 0; i < table->count; i++) {
-        if (strcmp(table->objects[i].object_name, oname) != 0) continue;
-        for (int a = 0; a < table->objects[i].count; a++) {
-            gm82_action_ref *ar = &table->objects[i].items[a];
-            if (ar->event_type != event_type && ar->event_type != -1) continue;
-            if (event_numb >= 0 && ar->event_numb != event_numb && ar->event_numb != 0) continue;
-            execute_ref(rt, self, ar);
-        }
-        break;
-    }
 }
 
 void gm82_actions_fire_create(gm82_runtime *rt, gm82_instance *self, const gm82_action_table *table) {

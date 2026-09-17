@@ -69,14 +69,7 @@ int gm82_decode_sounds_from_gmk(const uint8_t *data, size_t size, gm82_decoded_s
         s->kind = 0; s->volume = 1.0; s->preload = 0;
         if (off + 12 <= ol) {
             s->kind = rd_i32(d + off);
-            /* Search for raw audio headers (RIFF/WAVE, OggS, ID3) inside decompressed payload */
-            for (size_t ao = off; ao + 16 <= ol; ao++) {
-                if (memcmp(d + ao, "RIFF", 4) == 0 || memcmp(d + ao, "OggS", 4) == 0 || memcmp(d + ao, "ID3", 3) == 0) {
-                    s->data_offset = i; /* store source stream offset for JNI retrieval */
-                    s->data_size = ol - ao;
-                    break;
-                }
-            }
+            /* rest varies – store what we can */
         }
         (void)ver;
         free(d);

@@ -1,7 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_gml_eval.h"
 #include "gm82_gml_builtins.h"
-#include "gm82_script.h"
+#include "gm82_input.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,20 +59,12 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "direction") == 0) { *out = s ? s->direction : 0; return true; }
     if (strcmp(name, "image_index") == 0) { *out = s ? (double)s->image_index : 0; return true; }
     if (strcmp(name, "image_speed") == 0) { *out = s ? s->image_speed : 0; return true; }
+    if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1; return true; }
+    if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1; return true; }
     if (strcmp(name, "sprite_index") == 0) { *out = s ? (double)s->sprite_index : 0; return true; }
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
-    if (strcmp(name, "visible") == 0) { *out = s && s->visible ? 1 : 0; return true; }
-    if (strcmp(name, "persistent") == 0) { *out = s && s->persistent ? 1 : 0; return true; }
-    if (strcmp(name, "depth") == 0) { *out = s ? (double)s->depth : 0; return true; }
-    if (strcmp(name, "gravity") == 0) { *out = s ? s->gravity : 0; return true; }
-    if (strcmp(name, "gravity_direction") == 0) { *out = s ? s->gravity_direction : 270; return true; }
-    if (strcmp(name, "friction") == 0) { *out = s ? s->friction : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
-    if (strncmp(name, "alarm_", 6) == 0) {
-        int idx = atoi(name + 6);
-        if (s && idx >= 0 && idx < 12) { *out = (double)s->alarms[idx]; return true; }
-    }
     if (strcmp(name, "score") == 0) { *out = gml_get_score(); return true; }
     if (strcmp(name, "lives") == 0) { *out = gml_get_lives(); return true; }
     if (strcmp(name, "health") == 0) { *out = gml_get_health(); return true; }
@@ -82,20 +74,46 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "room_speed") == 0) { *out = p->rt ? (double)p->rt->room_speed : 30; return true; }
     if (strcmp(name, "mouse_x") == 0) { *out = gml_mouse_x(); return true; }
     if (strcmp(name, "mouse_y") == 0) { *out = gml_mouse_y(); return true; }
-    /* Check instance user variables */
-    if (s) {
-        for (int vi = 0; vi < s->var_count; vi++) {
-            if (strcmp(s->var_names[vi], name) == 0) {
-                *out = s->var_values[vi];
-                return true;
+    /* vk_ constants (GM key codes) */
+    if (strcmp(name, "vk_left") == 0) { *out = 37; return true; }
+    if (strcmp(name, "vk_right") == 0) { *out = 39; return true; }
+    if (strcmp(name, "vk_up") == 0) { *out = 38; return true; }
+    if (strcmp(name, "vk_down") == 0) { *out = 40; return true; }
+    if (strcmp(name, "vk_enter") == 0) { *out = 13; return true; }
+    if (strcmp(name, "vk_space") == 0) { *out = 32; return true; }
+    if (strcmp(name, "vk_shift") == 0) { *out = 16; return true; }
+    if (strcmp(name, "vk_control") == 0) { *out = 17; return true; }
+    if (strcmp(name, "vk_escape") == 0) { *out = 27; return true; }
+    if (strcmp(name, "vk_nokey") == 0) { *out = 0; return true; }
+    if (strcmp(name, "vk_anykey") == 0) { *out = 1; return true; }
+    /* Resource name → index (GM style: sprite_index = mini_mario) */
+    if (p->rt) {
+        if (p->rt->sprite_groups) {
+            for (int i = 0; i < p->rt->sprite_groups->count; i++) {
+                if (strcmp(p->rt->sprite_groups->items[i].name, name) == 0) {
+                    *out = (double)i; return true;
+                }
             }
         }
-        /* Default unset user variable is 0 */
-        *out = 0;
-        return true;
+        if (p->rt->sprites) {
+            for (int i = 0; i < p->rt->sprites->count; i++) {
+                if (p->rt->sprites->frames[i].name[0] &&
+                    strcmp(p->rt->sprites->frames[i].name, name) == 0) {
+                    *out = (double)i; return true;
+                }
+            }
+        }
+        if (p->rt->objects) {
+            for (int i = 0; i < p->rt->objects->count; i++) {
+                if (strcmp(p->rt->objects->items[i].name, name) == 0) {
+                    *out = (double)i; return true;
+                }
+            }
+        }
     }
-    snprintf(p->err, sizeof(p->err), "unknown var %s", name);
-    return false;
+    /* unknown identifier: treat as 0 so assignment chains don't abort whole block */
+    *out = 0;
+    return true;
 }
 
 static bool set_var(gml_parser *p, const char *name, double v) {
@@ -110,37 +128,13 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "direction") == 0) { s->direction = v; return true; }
     if (strcmp(name, "image_index") == 0) { s->image_index = (int32_t)v; return true; }
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
+    if (strcmp(name, "image_xscale") == 0) { s->image_xscale = v; return true; }
+    if (strcmp(name, "image_yscale") == 0) { s->image_yscale = v; return true; }
     if (strcmp(name, "sprite_index") == 0) { s->sprite_index = (int32_t)v; return true; }
     if (strcmp(name, "solid") == 0) { s->solid = v != 0; return true; }
-    if (strcmp(name, "visible") == 0) { s->visible = v != 0; return true; }
-    if (strcmp(name, "persistent") == 0) { s->persistent = v != 0; return true; }
-    if (strcmp(name, "depth") == 0) { s->depth = (int32_t)v; return true; }
-    if (strcmp(name, "gravity") == 0) { s->gravity = v; return true; }
-    if (strcmp(name, "gravity_direction") == 0) { s->gravity_direction = v; return true; }
-    if (strcmp(name, "friction") == 0) { s->friction = v; return true; }
-    if (strncmp(name, "alarm_", 6) == 0) {
-        int idx = atoi(name + 6);
-        if (s && idx >= 0 && idx < 12) { s->alarms[idx] = (int32_t)v; return true; }
-    }
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
-    /* Store or update instance user variables */
-    if (s) {
-        for (int vi = 0; vi < s->var_count; vi++) {
-            if (strcmp(s->var_names[vi], name) == 0) {
-                s->var_values[vi] = v;
-                return true;
-            }
-        }
-        if (s->var_count < 64) {
-            strncpy(s->var_names[s->var_count], name, 31);
-            s->var_names[s->var_count][31] = 0;
-            s->var_values[s->var_count] = v;
-            s->var_count++;
-            return true;
-        }
-    }
     snprintf(p->err, sizeof(p->err), "cannot set %s", name);
     return false;
 }
@@ -169,109 +163,47 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (c == '-') ? -v : v;
         return true;
     }
+    if (c == '!') {
+        p->i++;
+        double v;
+        if (!parse_primary(p, &v)) return false;
+        *out = (v == 0) ? 1 : 0;
+        return true;
+    }
     char id[64];
     if (!parse_ident(p, id, sizeof(id))) return false;
-    /* function call? */
+    if (strcmp(id, "not") == 0) {
+        double v;
+        if (!parse_primary(p, &v)) return false;
+        *out = (v == 0) ? 1 : 0;
+        return true;
+    }
+    /* function call? collect up to 4 args */
     if (match(p, '(')) {
-        double args[8] = {0};
-        size_t argc = 0;
-        skip_ws(p);
+        double args[4] = {0,0,0,0};
+        int nargs = 0;
         if (peek(p) != ')') {
             for (;;) {
-                if (argc < 8) {
-                    if (!parse_expr(p, &args[argc])) return false;
-                    argc++;
-                } else {
-                    double dummy;
-                    if (!parse_expr(p, &dummy)) return false;
-                }
-                skip_ws(p);
-                if (peek(p) == ',') {
-                    getc_(p);
-                    skip_ws(p);
-                } else {
-                    break;
-                }
+                if (nargs >= 4) return false;
+                if (!parse_expr(p, &args[nargs])) return false;
+                nargs++;
+                if (peek(p) != ',') break;
+                getc_(p);
             }
         }
         if (!match(p, ')')) return false;
-        double arg = (argc > 0) ? args[0] : 0;
+        double arg = args[0];
         if (strcmp(id, "abs") == 0) { *out = fabs(arg); return true; }
         if (strcmp(id, "sign") == 0) { *out = arg > 0 ? 1 : (arg < 0 ? -1 : 0); return true; }
         if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)arg + 1)); return true; }
-        if (strcmp(id, "irandom_range") == 0) {
-            int lo = (int)args[0], hi = (int)args[1];
-            if (hi < lo) { int t = lo; lo = hi; hi = t; }
-            int range = hi - lo + 1;
-            *out = range > 0 ? (double)(lo + (rand() % range)) : (double)lo;
-            return true;
-        }
-        if (strcmp(id, "random") == 0) { *out = ((double)rand() / (double)RAND_MAX) * arg; return true; }
-        if (strcmp(id, "random_range") == 0) {
-            double lo = args[0], hi = args[1];
-            *out = lo + ((double)rand() / (double)RAND_MAX) * (hi - lo);
-            return true;
-        }
         if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
         if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
         if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
-        if (strcmp(id, "sqrt") == 0) { *out = sqrt(arg); return true; }
-        if (strcmp(id, "sqr") == 0) { *out = arg * arg; return true; }
-        if (strcmp(id, "sin") == 0) { *out = sin(arg); return true; }
-        if (strcmp(id, "cos") == 0) { *out = cos(arg); return true; }
-        if (strcmp(id, "min") == 0) {
-            double m = (argc > 0) ? args[0] : 0;
-            for (size_t k = 1; k < argc; k++) if (args[k] < m) m = args[k];
-            *out = m; return true;
-        }
-        if (strcmp(id, "max") == 0) {
-            double m = (argc > 0) ? args[0] : 0;
-            for (size_t k = 1; k < argc; k++) if (args[k] > m) m = args[k];
-            *out = m; return true;
-        }
-        if (strcmp(id, "clamp") == 0) {
-            double v = args[0], lo = args[1], hi = args[2];
-            *out = (v < lo) ? lo : ((v > hi) ? hi : v); return true;
-        }
-        if (strcmp(id, "point_distance") == 0) {
-            *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true;
-        }
-        if (strcmp(id, "point_direction") == 0) {
-            *out = gml_point_direction(args[0], args[1], args[2], args[3]); return true;
-        }
-        if (strcmp(id, "lengthdir_x") == 0) {
-            *out = gml_lengthdir_x(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "lengthdir_y") == 0) {
-            *out = gml_lengthdir_y(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "place_meeting") == 0) {
-            *out = gml_place_meeting(args[0], args[1], args[2]); return true;
-        }
-        if (strcmp(id, "position_meeting") == 0) {
-            *out = gml_position_meeting(args[0], args[1], args[2]); return true;
-        }
-        if (strcmp(id, "instance_place") == 0) {
-            *out = gml_instance_place(args[0], args[1], args[2]); return true;
-        }
-        if (strcmp(id, "place_free") == 0) {
-            *out = gml_place_free(args[0], (argc >= 2) ? args[1] : (p->self ? p->self->y : 0));
-            return true;
-        }
-        if (strcmp(id, "instance_number") == 0) {
-            *out = gml_instance_number(arg); return true;
-        }
-        if (strcmp(id, "instance_exists") == 0) {
-            *out = gml_instance_exists(arg); return true;
-        }
-        if (strcmp(id, "instance_create") == 0) {
-            *out = gml_instance_create(args[0], args[1], args[2]); return true;
-        }
-        if (strcmp(id, "instance_destroy") == 0) {
-            gml_instance_destroy(); *out = 1; return true;
-        }
         if (strcmp(id, "keyboard_check") == 0) {
             *out = gml_keyboard_check(arg); return true;
+        }
+        if (strcmp(id, "mouse_check_button") == 0) {
+            *out = gml_mouse_check_button(arg); return true;
         }
         if (strcmp(id, "keyboard_check_pressed") == 0) {
             *out = gml_keyboard_check_pressed(arg); return true;
@@ -279,109 +211,28 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "keyboard_check_released") == 0) {
             *out = gml_keyboard_check_released(arg); return true;
         }
-        if (strcmp(id, "mouse_check_button") == 0) {
-            *out = gml_mouse_check_button(arg); return true;
+        if (strcmp(id, "place_free") == 0) {
+            double yarg = (nargs >= 2) ? args[1] : (p->self ? p->self->y : 0);
+            *out = gml_place_free(arg, yarg); return true;
         }
-        if (strcmp(id, "mouse_check_button_pressed") == 0) {
-            *out = gml_mouse_check_button_pressed(arg); return true;
+        if (strcmp(id, "place_meeting") == 0) {
+            double yarg = (nargs >= 2) ? args[1] : 0;
+            double oarg = (nargs >= 3) ? args[2] : -1;
+            *out = gml_place_meeting(arg, yarg, oarg); return true;
         }
-        if (strcmp(id, "sound_play") == 0 || strcmp(id, "audio_play_sound") == 0) {
-            *out = gml_sound_play(arg); return true;
+        if (strcmp(id, "place_empty") == 0) {
+            double yarg = (nargs >= 2) ? args[1] : (p->self ? p->self->y : 0);
+            *out = gml_place_empty(arg, yarg); return true;
         }
-        if (strcmp(id, "sound_loop") == 0) {
-            *out = gml_sound_loop(arg); return true;
+        if (strcmp(id, "instance_number") == 0) {
+            *out = gml_instance_number(arg); return true;
         }
-        if (strcmp(id, "sound_stop") == 0) {
-            *out = gml_sound_stop(arg); return true;
-        }
-        if (strcmp(id, "room_goto") == 0) {
-            *out = gml_room_goto(arg); return true;
-        }
-        if (strcmp(id, "room_goto_next") == 0) {
-            *out = gml_room_goto_next(); return true;
-        }
-        if (strcmp(id, "room_goto_previous") == 0) {
-            *out = gml_room_goto_previous(); return true;
-        }
-        if (strcmp(id, "room_restart") == 0) {
-            *out = gml_room_restart(); return true;
-        }
-        if (strcmp(id, "game_restart") == 0) {
-            *out = gml_game_restart(); return true;
-        }
-        if (strcmp(id, "game_end") == 0) {
-            *out = gml_game_end(); return true;
-        }
-        if (strcmp(id, "event_user") == 0) {
-            gm82_runtime *rt = gm82_gml_get_runtime();
-            if (rt) gm82_runtime_event_user(rt, (int)arg);
-            *out = 1; return true;
-        }
-        if (strcmp(id, "make_color_rgb") == 0) {
-            int r = (int)args[0] & 0xFF, g = (int)args[1] & 0xFF, b = (int)args[2] & 0xFF;
-            *out = (double)(r | (g << 8) | (b << 16)); return true;
-        }
-        if (strcmp(id, "instance_find") == 0) {
-            *out = gml_instance_find(args[0], args[1]); return true;
-        }
-        if (strcmp(id, "instance_nearest") == 0) {
-            *out = gml_instance_nearest(args[0], args[1], args[2]); return true;
-        }
-        if (strcmp(id, "draw_sprite") == 0) {
-            gml_draw_sprite(args[0], args[1], args[2]); *out = 1; return true;
-        }
-        if (strcmp(id, "draw_text") == 0) {
-            *out = 1; return true;
-        }
-        if (strcmp(id, "draw_rectangle") == 0) {
-            gml_draw_rectangle(args[0], args[1], args[2], args[3], (argc >= 5) ? args[4] : 0);
-            *out = 1; return true;
-        }
-        if (strcmp(id, "draw_circle") == 0) {
-            gml_draw_circle(args[0], args[1], args[2], (argc >= 4) ? args[3] : 0);
-            *out = 1; return true;
-        }
-        if (strcmp(id, "draw_set_color") == 0) {
-            gml_draw_set_color(arg); *out = 1; return true;
-        }
-        if (strcmp(id, "draw_set_alpha") == 0) {
-            gml_draw_set_alpha(arg); *out = 1; return true;
-        }
-        if (strcmp(id, "sprite_get_width") == 0) {
-            *out = gml_sprite_get_width(arg); return true;
-        }
-        if (strcmp(id, "sprite_get_height") == 0) {
-            *out = gml_sprite_get_height(arg); return true;
-        }
-        /* Fallback: Check if this function name matches an embedded GML script */
-        if (p->rt && p->rt->scripts) {
-            const gm82_script_list *sl = (const gm82_script_list *)p->rt->scripts;
-            int sidx = gm82_script_find(sl, id);
-            if (sidx >= 0 && sl->items[sidx].code[0]) {
-                /* Set script argument variables: argument0, argument1, ... */
-                if (p->self) {
-                    char arg_name[16];
-                    for (size_t ai = 0; ai < argc && ai < 16; ai++) {
-                        snprintf(arg_name, sizeof(arg_name), "argument%zu", ai);
-                        set_var(p, arg_name, args[ai]);
-                    }
-                }
-                gm82_gml_eval_block(p->rt, p->self, sl->items[sidx].code);
-                *out = 1;
-                return true;
-            }
+        if (strcmp(id, "gravedad") == 0) {
+            /* user script in mario sample – apply simple gravity */
+            if (p->self) { p->self->gravity = 0.4; p->self->gravity_direction = 270; }
+            *out = 0; return true;
         }
         snprintf(p->err, sizeof(p->err), "unknown fn %s", id);
-        return false;
-    }
-    /* array indexing: id[index] */
-    if (match(p, '[')) {
-        double idx = 0;
-        if (parse_expr(p, &idx) && match(p, ']')) {
-            char arr_var[80];
-            snprintf(arr_var, sizeof(arr_var), "%s_%d", id, (int)idx);
-            return get_var(p, arr_var, out);
-        }
         return false;
     }
     return get_var(p, id, out);
@@ -415,7 +266,7 @@ static bool parse_additive(gml_parser *p, double *out) {
     return true;
 }
 
-static bool parse_expr(gml_parser *p, double *out) {
+static bool parse_comparison(gml_parser *p, double *out) {
     if (!parse_additive(p, out)) return false;
     for (;;) {
         skip_ws(p);
@@ -441,6 +292,26 @@ static bool parse_expr(gml_parser *p, double *out) {
     return true;
 }
 
+static bool parse_expr(gml_parser *p, double *out) {
+    if (!parse_comparison(p, out)) return false;
+    for (;;) {
+        skip_ws(p);
+        int andop = 0;
+        if (p->i + 1 < p->n && p->s[p->i] == '&' && p->s[p->i+1] == '&') { andop = 1; p->i += 2; }
+        else if (p->i + 1 < p->n && p->s[p->i] == '|' && p->s[p->i+1] == '|') { andop = 2; p->i += 2; }
+        else if (p->i + 3 <= p->n && p->s[p->i]=='a' && p->s[p->i+1]=='n' && p->s[p->i+2]=='d' &&
+                 (p->i+3>=p->n || !isalnum((unsigned char)p->s[p->i+3]))) { andop = 1; p->i += 3; }
+        else if (p->i + 2 <= p->n && p->s[p->i]=='o' && p->s[p->i+1]=='r' &&
+                 (p->i+2>=p->n || !isalnum((unsigned char)p->s[p->i+2]))) { andop = 2; p->i += 2; }
+        else break;
+        double r;
+        if (!parse_comparison(p, &r)) return false;
+        if (andop == 1) *out = (*out != 0 && r != 0) ? 1 : 0;
+        else *out = (*out != 0 || r != 0) ? 1 : 0;
+    }
+    return true;
+}
+
 bool gm82_gml_eval_expr(gm82_runtime *rt, gm82_instance *self, const char *expr, double *out) {
     if (!expr || !out) return false;
     gml_parser p = { expr, 0, strlen(expr), rt, self, {0} };
@@ -456,104 +327,141 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     gm82_gml_set_self(self);
     char id[64];
     if (!parse_ident(&p, id, sizeof(id))) return false;
-    /* if (cond) body */
+    /* if (cond) body [else body] – supports single stmt or { block } */
     if (strcmp(id, "if") == 0) {
-        if (!match(&p, '(')) return false;
         double cond = 0;
-        if (!parse_expr(&p, &cond)) return false;
-        if (!match(&p, ')')) return false;
         skip_ws(&p);
-        /* split then/else by finding " else " at top level (simple) */
+        /* GML allows: if (expr)  OR  if expr   e.g. if keyboard_check(vk_left) */
+        if (peek(&p) == '(') {
+            getc_(&p);
+            if (!parse_expr(&p, &cond)) return false;
+            if (!match(&p, ')')) return false;
+        } else {
+            if (!parse_expr(&p, &cond)) return false;
+        }
+        skip_ws(&p);
         const char *rest = p.s + p.i;
-        const char *else_pos = strstr(rest, " else ");
-        char then_buf[256], else_buf[256];
-        if (else_pos) {
-            size_t tl = (size_t)(else_pos - rest);
-            if (tl >= sizeof(then_buf)) tl = sizeof(then_buf)-1;
-            memcpy(then_buf, rest, tl); then_buf[tl] = 0;
-            strncpy(else_buf, else_pos + 6, sizeof(else_buf)-1); else_buf[sizeof(else_buf)-1]=0;
-            if (cond != 0) return gm82_gml_eval_stmt(rt, self, then_buf);
+        char then_buf[512], else_buf[512];
+        then_buf[0] = else_buf[0] = 0;
+        if (*rest == '{') {
+            int depth = 0; size_t k = 0; const char *q = rest;
+            while (*q && k + 1 < sizeof(then_buf)) {
+                if (*q == '{') depth++;
+                else if (*q == '}') {
+                    depth--;
+                    if (depth == 0) { q++; break; }
+                }
+                then_buf[k++] = *q++;
+            }
+            then_buf[k] = 0;
+            rest = q;
+        } else {
+            size_t k = 0;
+            while (rest[k] && rest[k] != ';' && rest[k] != '\n' && k + 1 < sizeof(then_buf)) {
+                if ((k == 0 || isspace((unsigned char)rest[k-1]) || rest[k-1]==')') &&
+                    strncmp(rest + k, "else", 4) == 0 &&
+                    (rest[k+4]==0 || isspace((unsigned char)rest[k+4]) || rest[k+4]=='{'))
+                    break;
+                then_buf[k] = rest[k]; k++;
+            }
+            then_buf[k] = 0;
+            rest += k;
+            if (*rest == ';') rest++;
+        }
+        while (*rest && isspace((unsigned char)*rest)) rest++;
+        if (strncmp(rest, "else", 4) == 0 &&
+            (rest[4]==0 || isspace((unsigned char)rest[4]) || rest[4]=='{')) {
+            rest += 4;
+            while (*rest && isspace((unsigned char)*rest)) rest++;
+            if (*rest == '{') {
+                int depth = 0; size_t k = 0;
+                while (*rest && k + 1 < sizeof(else_buf)) {
+                    if (*rest == '{') depth++;
+                    else if (*rest == '}') {
+                        depth--;
+                        if (depth == 0) { rest++; break; }
+                    }
+                    else_buf[k++] = *rest++;
+                }
+                else_buf[k] = 0;
+            } else {
+                size_t k = 0;
+                while (rest[k] && rest[k] != ';' && rest[k] != '\n' && k + 1 < sizeof(else_buf)) {
+                    else_buf[k] = rest[k]; k++;
+                }
+                else_buf[k] = 0;
+            }
+        }
+        if (cond != 0) {
+            if (then_buf[0] == '{') return gm82_gml_eval_block(rt, self, then_buf) > 0;
+            return gm82_gml_eval_stmt(rt, self, then_buf);
+        }
+        if (else_buf[0]) {
+            if (else_buf[0] == '{') return gm82_gml_eval_block(rt, self, else_buf) > 0;
             return gm82_gml_eval_stmt(rt, self, else_buf);
         }
-        if (cond == 0) return true;
-        return gm82_gml_eval_stmt(rt, self, rest);
-    }
-    /* repeat (count) body */
-    if (strcmp(id, "repeat") == 0) {
-        if (!match(&p, '(')) return false;
-        double count = 0;
-        if (!parse_expr(&p, &count)) return false;
-        if (!match(&p, ')')) return false;
-        skip_ws(&p);
-        int n = (int)count;
-        const char *body = p.s + p.i;
-        for (int ri = 0; ri < n; ri++) {
-            gm82_gml_eval_stmt(rt, self, body);
-        }
         return true;
     }
-    /* with (target) body */
-    if (strcmp(id, "with") == 0) {
-        if (!match(&p, '(')) return false;
-        char target_id[64];
-        if (!parse_ident(&p, target_id, sizeof(target_id))) return false;
-        if (!match(&p, ')')) return false;
-        skip_ws(&p);
-        const char *body = p.s + p.i;
-        if (rt) {
-            int32_t oi = -1;
-            if (strcmp(target_id, "all") == 0) oi = -1;
-            else if (strcmp(target_id, "other") == 0) {
-                extern gm82_instance *gml_get_other(void);
-                gm82_instance *other = gml_get_other();
-                if (other && other->alive) gm82_gml_eval_stmt(rt, other, body);
-                return true;
-            }
-            for (int i = 0; i < rt->instance_count; i++) {
-                gm82_instance *inst = &rt->instances[i];
-                if (!inst->alive) continue;
-                if (oi == -1 || inst->object_index == oi) {
-                    gm82_gml_eval_stmt(rt, inst, body);
-                }
-            }
-        }
-        return true;
-    }
-    /* array assignment: id[index] = expr */
-    if (match(&p, '[')) {
-        double idx = 0;
-        if (parse_expr(&p, &idx) && match(&p, ']')) {
-            char arr_var[80];
-            snprintf(arr_var, sizeof(arr_var), "%s_%d", id, (int)idx);
-            if (!match(&p, '=')) return false;
-            double v;
-            if (!parse_expr(&p, &v)) return false;
-            return set_var(&p, arr_var, v);
-        }
-        return false;
-    }
-    if (!match(&p, '=')) {
+
+    skip_ws(&p);
+    /* compound: += -= *= /= */
+    char op = 0;
+    if (p.i + 1 < p.n && (p.s[p.i]=='+'||p.s[p.i]=='-'||p.s[p.i]=='*'||p.s[p.i]=='/') && p.s[p.i+1]=='=') {
+        op = p.s[p.i];
+        p.i += 2;
+    } else if (!match(&p, '=')) {
         p.i = 0;
         double v;
         return parse_expr(&p, &v);
     }
     double v;
     if (!parse_expr(&p, &v)) return false;
+    if (op) {
+        double cur = 0;
+        get_var(&p, id, &cur);
+        if (op=='+') v = cur + v;
+        else if (op=='-') v = cur - v;
+        else if (op=='*') v = cur * v;
+        else if (op=='/') v = (v!=0) ? cur / v : 0;
+    }
     return set_var(&p, id, v);
 }
 
 int gm82_gml_eval_block(gm82_runtime *rt, gm82_instance *self, const char *code) {
     if (!code) return 0;
     int ok = 0;
-    char buf[256];
+    char buf[2048];
     const char *p = code;
     while (*p) {
-        while (*p && (isspace((unsigned char)*p) || *p == ';')) p++;
+        while (*p && (*p=='\r' || isspace((unsigned char)*p) || *p == ';' || *p == '{' || *p == '}')) p++;
         if (!*p) break;
+        if (p[0]=='/' && p[1]=='/') {
+            while (*p && *p != '\n') p++;
+            continue;
+        }
         size_t j = 0;
-        while (*p && *p != ';' && *p != '\n' && j + 1 < sizeof(buf))
-            buf[j++] = *p++;
+        int depth = 0;
+        int is_if = (strncmp(p, "if", 2) == 0 && !isalnum((unsigned char)p[2]) && p[2] != '_');
+        while (*p && j + 1 < sizeof(buf)) {
+            if (*p == '{') { depth++; buf[j++] = *p++; continue; }
+            if (*p == '}') {
+                if (depth > 0) {
+                    depth--;
+                    buf[j++] = *p++;
+                    if (is_if && depth == 0) break;
+                    continue;
+                }
+                break;
+            }
+            if (depth == 0 && *p == ';') break;
+            if (depth == 0 && *p == '\n' && !is_if) break;
+            if (depth == 0 && *p == '\n' && is_if) { p++; continue; }
+            if (*p != '\r') buf[j++] = *p;
+            p++;
+        }
         buf[j] = 0;
+        if (*p == ';' || *p == '\n') p++;
+        while (j > 0 && isspace((unsigned char)buf[j-1])) buf[--j] = 0;
         if (j > 0 && gm82_gml_eval_stmt(rt, self, buf)) ok++;
     }
     return ok;

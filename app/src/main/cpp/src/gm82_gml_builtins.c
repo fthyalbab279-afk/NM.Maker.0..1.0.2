@@ -123,37 +123,6 @@ static bool aabb_overlap(double ax, double ay, int aw, int ah,
     return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 }
 
-static bool sprite_pixel_overlap(gm82_runtime *rt,
-                                 int32_t spr_a, double ax, double ay,
-                                 int32_t spr_b, double bx, double by) {
-    if (!rt || !rt->sprites) return false;
-    if (spr_a < 0 || spr_a >= rt->sprites->count || spr_b < 0 || spr_b >= rt->sprites->count)
-        return false;
-    const gm82_decoded_frame *fa = &rt->sprites->frames[spr_a];
-    const gm82_decoded_frame *fb = &rt->sprites->frames[spr_b];
-    if (!fa->rgba || !fb->rgba) return true; /* fallback to bounding box overlap */
-
-    int x1 = (int)fmax(ax, bx);
-    int y1 = (int)fmax(ay, by);
-    int x2 = (int)fmin(ax + fa->width, bx + fb->width);
-    int y2 = (int)fmin(ay + fa->height, by + fb->height);
-
-    if (x1 >= x2 || y1 >= y2) return false;
-
-    for (int y = y1; y < y2; y++) {
-        int sya = y - (int)ay;
-        int syb = y - (int)by;
-        for (int x = x1; x < x2; x++) {
-            int sxa = x - (int)ax;
-            int sxb = x - (int)bx;
-            const uint8_t *pa = fa->rgba + ((size_t)sya * (size_t)fa->width + (size_t)sxa) * 4;
-            const uint8_t *pb = fb->rgba + ((size_t)syb * (size_t)fb->width + (size_t)sxb) * 4;
-            if (pa[3] > 0 && pb[3] > 0) return true;
-        }
-    }
-    return false;
-}
-
 double gml_place_meeting(double x, double y, double object_index) {
     if (!g_rt || !g_self) return 0;
     int32_t oi = (int32_t)object_index;
@@ -165,14 +134,7 @@ double gml_place_meeting(double x, double y, double object_index) {
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) {
-            if (g_self->sprite_index >= 0 && o->sprite_index >= 0) {
-                if (sprite_pixel_overlap(g_rt, g_self->sprite_index, x, y, o->sprite_index, o->x, o->y))
-                    return 1;
-            } else {
-                return 1;
-            }
-        }
+        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) return 1;
     }
     /* also solid tiles when object_index < 0 (all) */
     if (oi < 0 && g_rt->rooms && g_rt->current_room >= 0 && g_rt->current_room < g_rt->rooms->count) {
@@ -211,14 +173,8 @@ double gml_instance_place(double x, double y, double object_index) {
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) {
-            if (g_self->sprite_index >= 0 && o->sprite_index >= 0) {
-                if (sprite_pixel_overlap(g_rt, g_self->sprite_index, x, y, o->sprite_index, o->x, o->y))
-                    return (double)o->id;
-            } else {
-                return (double)o->id;
-            }
-        }
+        if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh))
+            return (double)o->id;
     }
     return -4;
 }
@@ -250,59 +206,17 @@ void gml_draw_sprite(double sprite, double x, double y) {
             int dx = dx0 + sx;
             if (dx < 0 || dx >= g_draw_w) continue;
             const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
-            uint8_t sa = s[3];
-            if (sa == 0) continue;
+            if (s[3] == 0) continue;
             uint8_t *d = g_draw_buf + ((size_t)dy * (size_t)g_draw_w + (size_t)dx) * 4;
-            if (sa == 255) {
-                d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
-            } else {
-                uint32_t a = sa;
-                uint32_t inv = 255 - a;
-                d[0] = (uint8_t)((s[0] * a + d[0] * inv) / 255);
-                d[1] = (uint8_t)((s[1] * a + d[1] * inv) / 255);
-                d[2] = (uint8_t)((s[2] * a + d[2] * inv) / 255);
-                d[3] = 255;
-            }
+            d[0]=s[0]; d[1]=s[1]; d[2]=s[2]; d[3]=255;
         }
     }
 }
 
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha) {
-    (void)xscale; (void)yscale; (void)rot; (void)color;
-    if (!g_draw_buf || !g_rt || !g_rt->sprites) return;
-    int si = (int)sprite;
-    if (g_rt->sprite_groups) {
-        si = gm82_sprite_resolve_frame(g_rt->sprite_groups, (int)sprite, (int)subimg);
-    }
-    if (si < 0 || si >= g_rt->sprites->count) return;
-    const gm82_decoded_frame *fr = &g_rt->sprites->frames[si];
-    if (!fr->rgba) return;
-    float a_mult = (float)alpha;
-    if (a_mult < 0.0f) a_mult = 0.0f;
-    if (a_mult > 1.0f) a_mult = 1.0f;
-    int dx0 = (int)x, dy0 = (int)y;
-    for (int sy = 0; sy < fr->height; sy++) {
-        int dy = dy0 + sy;
-        if (dy < 0 || dy >= g_draw_h) continue;
-        for (int sx = 0; sx < fr->width; sx++) {
-            int dx = dx0 + sx;
-            if (dx < 0 || dx >= g_draw_w) continue;
-            const uint8_t *s = fr->rgba + ((size_t)sy * (size_t)fr->width + (size_t)sx) * 4;
-            if (s[3] == 0) continue;
-            uint8_t *d = g_draw_buf + ((size_t)dy * (size_t)g_draw_w + (size_t)dx) * 4;
-            if (a_mult >= 0.99f && s[3] == 255) {
-                d[0] = s[0]; d[1] = s[1]; d[2] = s[2]; d[3] = 255;
-            } else {
-                float src_a = ((float)s[3] / 255.0f) * a_mult;
-                float inv_a = 1.0f - src_a;
-                d[0] = (uint8_t)((float)s[0] * src_a + (float)d[0] * inv_a);
-                d[1] = (uint8_t)((float)s[1] * src_a + (float)d[1] * inv_a);
-                d[2] = (uint8_t)((float)s[2] * src_a + (float)d[2] * inv_a);
-                d[3] = 255;
-            }
-        }
-    }
+    (void)sprite; (void)subimg; (void)x; (void)y;
+    (void)xscale; (void)yscale; (void)rot; (void)color; (void)alpha;
 }
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
@@ -364,25 +278,10 @@ double gml_room(void) {
     return g_rt ? (double)g_rt->current_room : 0;
 }
 
-extern void gm82_enqueue_sound_command(int kind, int soundId, int loop, int prio, float volume);
-
-/* Audio built-ins with native sound command dispatching */
-double gml_sound_play(double sound_index) {
-    gm82_enqueue_sound_command(1, (int)sound_index, 0, 0, 1.0f);
-    return 1.0;
-}
-double gml_sound_loop(double sound_index) {
-    gm82_enqueue_sound_command(2, (int)sound_index, 1, 0, 1.0f);
-    return 1.0;
-}
-double gml_sound_stop(double sound_index) {
-    gm82_enqueue_sound_command(3, (int)sound_index, 0, 0, 0.0f);
-    return 1.0;
-}
-double gml_sound_isplaying(double sound_index) {
-    (void)sound_index;
-    return 0;
-}
+/* Audio not implemented – return 0 / no-op without faking playback */
+double gml_sound_play(double sound_index) { (void)sound_index; return 0; }
+double gml_sound_stop(double sound_index) { (void)sound_index; return 0; }
+double gml_sound_isplaying(double sound_index) { (void)sound_index; return 0; }
 
 double gml_room_restart(void) {
     if (!g_rt) return 0;
@@ -488,6 +387,7 @@ double gml_collision_point(double x, double y, double obj, double prec, double n
 }
 
 double gml_place_free(double x, double y) {
+    /* GM8: true iff no collision with a *solid object* at (x,y). Tiles are not objects. */
     if (!g_rt || !g_self) return 1;
     int32_t sw, sh;
     sprite_size(g_rt, g_self->sprite_index, &sw, &sh);
@@ -497,14 +397,6 @@ double gml_place_free(double x, double y) {
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh)) return 0;
-    }
-    if (g_rt->rooms && g_rt->current_room >= 0 && g_rt->current_room < g_rt->rooms->count) {
-        const gm82_decoded_room *room = &g_rt->rooms->items[g_rt->current_room];
-        for (int ti = 0; ti < room->tile_count; ti++) {
-            const gm82_decoded_tile *tile = &room->tiles[ti];
-            if (aabb_overlap(x, y, sw, sh, tile->x, tile->y, tile->width, tile->height))
-                return 0;
-        }
     }
     return 1;
 }
