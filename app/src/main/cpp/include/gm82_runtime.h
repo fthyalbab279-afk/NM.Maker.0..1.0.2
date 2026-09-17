@@ -15,6 +15,12 @@ extern "C" {
 typedef struct gm82_action_table gm82_action_table;
 
 #define GM82_MAX_INSTANCES 2048
+#define GM82_MAX_CUSTOM_VARS 32
+
+typedef struct {
+    char   name[32];
+    double value;
+} gm82_var;
 
 typedef struct {
     int32_t id;
@@ -25,7 +31,7 @@ typedef struct {
     double  direction, speed;
     double  gravity, gravity_direction;
     double  friction;
-    int32_t image_index;
+    double  image_index;
     double  image_speed;
     double  image_xscale;
     double  image_yscale;
@@ -42,6 +48,9 @@ typedef struct {
     double  timeline_position;
     double  timeline_speed;
     int32_t timeline_running;
+
+    gm82_var custom_vars[GM82_MAX_CUSTOM_VARS];
+    int32_t  custom_var_count;
 } gm82_instance;
 
 typedef struct {

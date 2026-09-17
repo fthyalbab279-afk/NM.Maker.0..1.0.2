@@ -241,8 +241,18 @@ void gm82_runtime_step(gm82_runtime *rt) {
     for (int i = 0; i < rt->instance_count; i++) {
         gm82_instance *inst = &rt->instances[i];
         if (!inst->alive) continue;
-        if (inst->image_speed != 0.0)
-            inst->image_index += (int32_t)(inst->image_speed > 0 ? 1 : -1);
+        if (inst->image_speed != 0.0) {
+            inst->image_index += inst->image_speed;
+            int frames = 1;
+            if (rt->sprite_groups && inst->sprite_index >= 0 && inst->sprite_index < rt->sprite_groups->count) {
+                frames = rt->sprite_groups->items[inst->sprite_index].frame_count;
+            } else if (rt->sprites && inst->sprite_index >= 0 && inst->sprite_index < rt->sprites->count) {
+                frames = 1;
+            }
+            if (frames < 1) frames = 1;
+            while (inst->image_index >= frames) inst->image_index -= frames;
+            while (inst->image_index < 0) inst->image_index += frames;
+        }
     }
 }
 

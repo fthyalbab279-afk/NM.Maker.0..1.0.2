@@ -215,8 +215,24 @@ void gml_draw_sprite(double sprite, double x, double y) {
 
 void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
                          double xscale, double yscale, double rot, double color, double alpha) {
-    (void)sprite; (void)subimg; (void)x; (void)y;
-    (void)xscale; (void)yscale; (void)rot; (void)color; (void)alpha;
+    (void)rot; (void)color; (void)alpha;
+    if (!g_rt || !g_rt->sprites) return;
+    int spr = (int)sprite;
+    int sub = (int)subimg;
+    int si = spr;
+    if (g_rt->sprite_groups)
+        si = gm82_sprite_resolve_frame(g_rt->sprite_groups, spr, sub);
+    if (si < 0 || si >= g_rt->sprites->count) return;
+    const gm82_decoded_frame *fr = &g_rt->sprites->frames[si];
+    if (!fr || !fr->rgba) return;
+
+    /* Draw using instance/builtin scales if xscale/yscale given */
+    int sw = fr->width, sh = fr->height;
+    int dw = (int)(sw * (xscale != 0 ? xscale : 1.0));
+    int dh = (int)(sh * (yscale != 0 ? yscale : 1.0));
+    if (dw < 0) dw = -dw;
+    if (dh < 0) dh = -dh;
+    (void)x; (void)y; (void)dw; (void)dh;
 }
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
@@ -246,7 +262,7 @@ void gml_set_speed(double v) {
 double gml_get_sprite_index(void) { return g_self ? (double)g_self->sprite_index : -1; }
 void gml_set_sprite_index(double v) { if (g_self) g_self->sprite_index = (int32_t)v; }
 double gml_get_image_index(void) { return g_self ? (double)g_self->image_index : 0; }
-void gml_set_image_index(double v) { if (g_self) g_self->image_index = (int32_t)v; }
+void gml_set_image_index(double v) { if (g_self) g_self->image_index = v; }
 double gml_get_solid(void) { return g_self ? (double)g_self->solid : 0; }
 double gml_get_visible(void) { return g_self ? (double)g_self->visible : 0; }
 

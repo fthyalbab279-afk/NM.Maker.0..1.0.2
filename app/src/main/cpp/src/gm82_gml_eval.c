@@ -111,6 +111,18 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
             }
         }
     }
+
+    if (s) {
+        for (int i = 0; i < s->custom_var_count; i++) {
+            if (strcmp(s->custom_vars[i].name, name) == 0) {
+                *out = s->custom_vars[i].value;
+                return true;
+            }
+        }
+        *out = 0.0;
+        return true;
+    }
+
     /* unknown identifier: treat as 0 so assignment chains don't abort whole block */
     *out = 0;
     return true;
@@ -126,7 +138,7 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "vspeed") == 0) { s->vspeed = v; return true; }
     if (strcmp(name, "speed") == 0) { s->speed = v; return true; }
     if (strcmp(name, "direction") == 0) { s->direction = v; return true; }
-    if (strcmp(name, "image_index") == 0) { s->image_index = (int32_t)v; return true; }
+    if (strcmp(name, "image_index") == 0) { s->image_index = v; return true; }
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
     if (strcmp(name, "image_xscale") == 0) { s->image_xscale = v; return true; }
     if (strcmp(name, "image_yscale") == 0) { s->image_yscale = v; return true; }
@@ -135,6 +147,23 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
+
+    if (s) {
+        for (int i = 0; i < s->custom_var_count; i++) {
+            if (strcmp(s->custom_vars[i].name, name) == 0) {
+                s->custom_vars[i].value = v;
+                return true;
+            }
+        }
+        if (s->custom_var_count < GM82_MAX_CUSTOM_VARS) {
+            strncpy(s->custom_vars[s->custom_var_count].name, name, 31);
+            s->custom_vars[s->custom_var_count].name[31] = '\0';
+            s->custom_vars[s->custom_var_count].value = v;
+            s->custom_var_count++;
+            return true;
+        }
+    }
+
     snprintf(p->err, sizeof(p->err), "cannot set %s", name);
     return false;
 }
