@@ -250,8 +250,12 @@ void gm82_runtime_step(gm82_runtime *rt) {
                 frames = 1;
             }
             if (frames < 1) frames = 1;
-            while (inst->image_index >= frames) inst->image_index -= frames;
-            while (inst->image_index < 0) inst->image_index += frames;
+            if (isnan(inst->image_index) || isinf(inst->image_index)) {
+                inst->image_index = 0;
+            } else {
+                inst->image_index = fmod(inst->image_index, frames);
+                if (inst->image_index < 0) inst->image_index += frames;
+            }
         }
     }
 }

@@ -42,7 +42,8 @@ static bool list_push(gm82_decoded_sprite_list *L, const char *name,
     if ((size_t)(w * h * 4) != bgra_len) return false;
 
     /* Dedupe: same name + size + pixel checksum already present */
-    (void)px_checksum;
+    uint32_t sum = px_checksum(bgra, bgra_len);
+    (void)sum;
     for (int i = 0; i < L->count; i++) {
         if (L->frames[i].width == w && L->frames[i].height == h &&
             L->frames[i].rgba_size == bgra_len &&
