@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>NOR Player v1.0</title>
+<script>
+  window.addEventListener('error', function(e) {
+    if (e.message && e.message.includes('Cannot set property fetch')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  });
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0d0f;color:#ccc;font-family:'Courier New',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;overflow:hidden}
+#drop-zone{border:2px dashed #333;border-radius:8px;padding:40px 60px;text-align:center;cursor:pointer;transition:all .2s;user-select:none}
+#drop-zone:hover,#drop-zone.over{border-color:#4a9eff;background:rgba(74,158,255,.05)}
+#drop-zone h1{font-size:1.4em;color:#4a9eff;margin-bottom:8px;letter-spacing:2px}
+#drop-zone p{color:#666;font-size:.75em;margin-top:4px}
+#drop-zone .hint{margin-top:16px;font-size:.7em;color:#444}
+#btn-open{margin-top:16px;padding:8px 20px;background:#1a1a2e;border:1px solid #4a9eff;color:#4a9eff;font-family:inherit;font-size:.75em;cursor:pointer;letter-spacing:1px;border-radius:3px}
+#btn-open:hover{background:#4a9eff;color:#000}
+#screen-wrap{display:none;flex-direction:column;align-items:center;gap:6px}
+#hud{width:100%;display:flex;justify-content:space-between;font-size:.65em;color:#666;padding:0 2px}
+#canvas-wrap{position:relative}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;border:1px solid #222;box-shadow:0 0 30px rgba(0,0,0,.8)}
+#overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+#overlay.hidden{display:none}
+#overlay h2{font-size:1.2em;color:#4a9eff;letter-spacing:2px}
+#overlay p{font-size:.7em;color:#888}
+#controls{margin-top:8px;font-size:.6em;color:#444;text-align:center;line-height:1.8}
+.key{display:inline-block;padding:1px 5px;border:1px solid #333;border-radius:2px;color:#555;margin:0 2px}
+#msg-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #4a9eff;padding:12px 20px;font-size:.7em;color:#fff;text-align:center;display:none;z-index:20;min-width:160px}
+#file-input{display:none}
+</style>
+</head>
+<body>
+
+<div id="drop-zone">
+  <h1>⬡ NOR PLAYER</h1>
+  <p>NOR Runtime v1.0 — Play .nor games without a browser engine</p>
+  <div class="hint">Drag &amp; drop a <strong>.nor</strong> file here<br>or click to browse</div>
+  <button id="btn-open">📂 Open .nor File</button>
+</div>
+
+<div id="screen-wrap">
+  <div id="hud"><span id="hud-title">NOR</span><span id="hud-room">Room 0</span><span id="hud-hp">HP: 100</span></div>
+  <div id="canvas-wrap">
+    <canvas id="game"></canvas>
+    <div id="overlay">
+      <h2 id="overlay-title">PAUSED</h2>
+      <p id="overlay-sub">Press ENTER to start</p>
+    </div>
+    <div id="msg-box"></div>
+  </div>
+  <div id="controls">
+    <span class="key">←→</span> Move &nbsp;
+    <span class="key">↑</span> / <span class="key">Space</span> Jump &nbsp;
+    <span class="key">Esc</span> Pause &nbsp;
+    <span class="key">R</span> Restart
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".nor">
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   NOR RUNTIME v1.0
+   Self-contained game engine for .nor format files.
+   No dependencies — pure JavaScript + Canvas 2D.
+═══════════════════════════════════════════════════════════ */
+
+const NOR = {
+  /* ── State ── */
+  data:      null,
+  room:      null,
+  instances: [],
+  globals:   {},
+  keys:      {},
+  keysDown:  {},
+  keysUp:    {},
+  paused:    true,
+  frame:     0,
+  camX:      0,
+  camY:      0,
+  msgQueue:  [],
+
+  /* ── Assets ── */
+  spriteImgs: {},
+  audioCtx:   null,
+  sounds:     {},
+
+  /* ── DOM ── */
+  canvas:    null,
+  ctx:       null,
+  animId:    null,
+  scale:     2,
+
+  /* ─────────────────────────
+     LOAD
+  ───────────────────────── */
+  async load(text) {
+    try {
+      this.data = JSON.parse(text);
+    } catch(e) {
+      alert('Invalid .nor file: ' + e.message);
+      return;
+    }
+    await this.loadSprites();
+    this.setupCanvas();
+    document.getElementById('hud-title').textContent = this.data.title || 'NOR';
+    document.getElementById('drop-zone').style.display = 'none';
+    document.getElementById('screen-wrap').style.display = 'flex';
+    document.getElementById('overlay-title').textContent = this.data.title || 'NOR';
+    document.getElementById('overlay-sub').textContent = 'Press ENTER to start';
+    this.showOverlay(true);
+  },
+
+  async loadSprites() {
+    const promises = (this.data.sprites || []).map(spr => new Promise(res => {
+      if (!spr.src) { res(); return; }
+      const img = new Image();
+      img.onload  = () => { this.spriteImgs[spr.id] = img; res(); };
+      img.onerror = () => res();
+      img.src = spr.src;
+    }));
+    await Promise.all(promises);
+  },
+
+  setupCanvas() {
+    const sc = this.data.screen || { w: 256, h: 240 };
+    this.scale = Math.max(1, Math.min(4, Math.floor(Math.min(window.innerWidth / sc.w, window.innerHeight / sc.h) * 0.85)));
+    this.canvas.width  = sc.w;
+    this.canvas.height = sc.h;
+    this.canvas.style.width  = (sc.w * this.scale) + 'px';
+    this.canvas.style.height = (sc.h * this.scale) + 'px';
+    this.ctx = this.canvas.getContext('2d');
+    this.ctx.imageSmoothingEnabled = false;
+  },
+
+  /* ─────────────────────────
+     ROOM
+  ───────────────────────── */
+  startRoom(roomId) {
+    const room = (this.data.rooms || []).find(r => r.id === roomId) || this.data.rooms[0];
+    if (!room) return;
+    this.room = room;
+    this.instances = [];
+    this.globals   = {};
+    this.camX = 0; this.camY = 0;
+
+    for (const inst of (room.instances || [])) {
+      this.createInstance(inst.obj, inst.x, inst.y, inst.id);
+    }
+    this.instances.forEach(i => this.runEvent(i, 'create'));
+    document.getElementById('hud-room').textContent = room.name || roomId;
+  },
+
+  /* ─────────────────────────
+     INSTANCE
+  ───────────────────────── */
+  createInstance(objId, x, y, instId) {
+    const obj = (this.data.objects || []).find(o => o.id === objId);
+    if (!obj) return null;
+    const spr = obj.sprite ? (this.data.sprites || []).find(s => s.id === obj.sprite) : null;
+    const inst = {
+      id:       instId || ('i' + Math.random().toString(36).slice(2,8)),
+      objId,
+      obj,
+      x, y,
+      vx: 0, vy: 0,
+      grounded: false,
+      hp:       obj.health ?? 100,
+      speed:    obj.speed  ?? 3,
+      facing:   1,
+      frame:    0,
+      frameTmr: 0,
+      animFps:  spr?.anim_fps ?? 12,
+      frameCount: spr?.frame_count ?? 1,
+      fw: spr?.frame_w ?? (this.data.tile?.w ?? 16),
+      fh: spr?.frame_h ?? (this.data.tile?.h ?? 16),
+      active: true,
+      vars: {},
+    };
+    this.instances.push(inst);
+    return inst;
+  },
+
+  getPlayer() {
+    return this.instances.find(i => i.obj.role === 'player' && i.active);
+  },
+
+  /* ─────────────────────────
+     NOR SCRIPT INTERPRETER
+  ───────────────────────── */
+  _scriptCache: {},
+
+  parseScript(src) {
+    if (this._scriptCache[src]) return this._scriptCache[src];
+    const events = {};
+    /* Match: on event_name { ... } — handles nested braces */
+    const re = /on\s+([\w_]+)\s*\{/g;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const evName = m[1];
+      let depth = 1, i = re.lastIndex;
+      const start = i;
+      while (i < src.length && depth > 0) {
+        if (src[i] === '{') depth++;
+        else if (src[i] === '}') depth--;
+        i++;
+      }
+      events[evName] = src.slice(start, i - 1).trim();
+    }
+    this._scriptCache[src] = events;
+    return events;
+  },
+
+  runEvent(inst, evName) {
+    if (!inst.active || !inst.obj.script) return;
+    const events = this.parseScript(inst.obj.script);
+    const body = events[evName];
+    if (!body) return;
+    this.execBody(inst, body);
+  },
+
+  execBody(inst, body) {
+    /* Tokenize lines (simple line-by-line execution) */
+    const lines = body.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('--'));
+    let i = 0;
+    while (i < lines.length) {
+      i = this.execLine(inst, lines, i);
+    }
+  },
+
+  execLine(inst, lines, i) {
+    const line = lines[i];
+    if (!line) return i + 1;
+
+    /* if condition { ... } [else { ... }] */
+    const ifM = line.match(/^if\s+(.+?)\s*\{(.*)$/);
+    if (ifM) {
+      const cond = this.evalExpr(inst, ifM[1]);
+      /* Collect body until matching } */
+      const [trueLines, nextI1] = this.collectBlock(lines, i);
+      const [falseLines, nextI2] = (() => {
+        if (nextI1 < lines.length && lines[nextI1]?.match(/^else\s*\{/)) {
+          return this.collectBlock(lines, nextI1);
+        }
+        return [[], nextI1];
+      })();
+      if (cond) this.execBody(inst, trueLines.join('\n'));
+      else       this.execBody(inst, falseLines.join('\n'));
+      return nextI2;
+    }
+
+    /* Function call */
+    const callM = line.match(/^(\w+)\s*\(([^)]*)\)$/);
+    if (callM) {
+      this.callBuiltin(inst, callM[1], callM[2].split(',').map(a => a.trim()).filter(a => a));
+      return i + 1;
+    }
+
+    /* Assignment: var = expr | var += expr etc. */
+    const assignM = line.match(/^(\w+)\s*([+\-*\/]?=)\s*(.+)$/);
+    if (assignM) {
+      const [, name, op, exprStr] = assignM;
+      const val = this.evalExpr(inst, exprStr);
+      const cur = this.getVar(inst, name);
+      let next;
+      switch (op) {
+        case '=':  next = val; break;
+        case '+=': next = cur + val; break;
+        case '-=': next = cur - val; break;
+        case '*=': next = cur * val; break;
+        case '/=': next = val !== 0 ? cur / val : 0; break;
+        default:   next = val;
+      }
+      this.setVar(inst, name, next);
+      return i + 1;
+    }
+
+    return i + 1;
+  },
+
+  collectBlock(lines, startI) {
+    /* The opening { is on startI's line; collect until matching } */
+    const body = [];
+    let depth = 1;
+    let i = startI + 1;
+    /* Handle inline: if cond { stmt } */
+    const inline = lines[startI].match(/\{(.+)\}$/);
+    if (inline) return [[inline[1].trim()], startI + 1];
+    /* inline one-liner: if cond { stmt */
+    const firstLine = lines[startI].match(/\{(.+)$/);
+    if (firstLine && firstLine[1].trim()) {
+      body.push(firstLine[1].trim());
+    }
+    while (i < lines.length && depth > 0) {
+      const l = lines[i];
+      const opens  = (l.match(/\{/g) || []).length;
+      const closes = (l.match(/\}/g) || []).length;
+      if (closes > 0 && depth - closes <= 0) { i++; break; }
+      body.push(l);
+      depth += opens - closes;
+      i++;
+    }
+    return [body, i];
+  },
+
+  evalExpr(inst, expr) {
+    expr = expr.trim();
+    /* Boolean literals */
+    if (expr === 'true')  return true;
+    if (expr === 'false') return false;
+
+    /* Logical: and / or */
+    const orParts  = this._splitLogic(expr, ' or ');
+    if (orParts.length > 1) return orParts.some(p => this.evalExpr(inst, p));
+    const andParts = this._splitLogic(expr, ' and ');
+    if (andParts.length > 1) return andParts.every(p => this.evalExpr(inst, p));
+
+    /* not */
+    const notM = expr.match(/^not\s+(.+)$/);
+    if (notM) return !this.evalExpr(inst, notM[1]);
+
+    /* Comparison */
+    const cmpM = expr.match(/^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
+    if (cmpM) {
+      const a = this.evalExpr(inst, cmpM[1]);
+      const b = this.evalExpr(inst, cmpM[3]);
+      switch (cmpM[2]) {
+        case '==': return a == b;
+        case '!=': return a != b;
+        case '>=': return a >= b;
+        case '<=': return a <= b;
+        case '>':  return a >  b;
+        case '<':  return a <  b;
+      }
+    }
+
+    /* Arithmetic */
+    const addM = expr.match(/^(.+?)\s*([+\-])\s*(.+)$/);
+    if (addM && !addM[1].match(/[><=!]/) ) {
+      const a = this.evalExpr(inst, addM[1]);
+      const b = this.evalExpr(inst, addM[3]);
+      return addM[2] === '+' ? Number(a) + Number(b) : Number(a) - Number(b);
+    }
+    const mulM = expr.match(/^(.+?)\s*([*\/])\s*(.+)$/);
+    if (mulM) {
+      const a = this.evalExpr(inst, mulM[1]);
+      const b = this.evalExpr(inst, mulM[3]);
+      return mulM[2] === '*' ? Number(a) * Number(b) : (b !== 0 ? Number(a) / Number(b) : 0);
+    }
+
+    /* Parentheses */
+    if (expr.startsWith('(') && expr.endsWith(')')) return this.evalExpr(inst, expr.slice(1,-1));
+
+    /* Function calls */
+    const fnM = expr.match(/^(\w+)\s*\(([^)]*)\)$/);
+    if (fnM) return this.callBuiltinExpr(inst, fnM[1], fnM[2].split(',').map(a=>a.trim()).filter(a=>a));
+
+    /* Number literal */
+    if (!isNaN(Number(expr))) return Number(expr);
+
+    /* String literal */
+    const strM = expr.match(/^"([^"]*)"$/) || expr.match(/^'([^']*)'$/);
+    if (strM) return strM[1];
+
+    /* Negative number literal (e.g. 0-speed) */
+
+    /* Variable */
+    return this.getVar(inst, expr);
+  },
+
+  _splitLogic(expr, sep) {
+    const parts = [];
+    let depth = 0, last = 0;
+    for (let i = 0; i < expr.length; i++) {
+      if (expr[i] === '(') depth++;
+      else if (expr[i] === ')') depth--;
+      else if (depth === 0 && expr.slice(i).startsWith(sep)) {
+        parts.push(expr.slice(last, i).trim());
+        last = i + sep.length;
+        i += sep.length - 1;
+      }
+    }
+    parts.push(expr.slice(last).trim());
+    return parts;
+  },
+
+  /* Built-in variables per instance */
+  getVar(inst, name) {
+    switch (name) {
+      case 'x':        return inst.x;
+      case 'y':        return inst.y;
+      case 'vx':       return inst.vx;
+      case 'vy':       return inst.vy;
+      case 'grounded': return inst.grounded;
+      case 'hp':       return inst.hp;
+      case 'speed':    return inst.speed;
+      case 'facing':   return inst.facing;
+      case 'frame':    return inst.frame;
+      case 'active':   return inst.active;
+      case 'col_dir':  return inst._colDir || '';
+      case 'timer':    return inst.vars.timer ?? 0;
+      case 'dir':      return inst.vars.dir   ?? 1;
+      case 'jump_force': return inst.vars.jump_force ?? this.data.physics?.jump_force ?? -9;
+      default:
+        if (name in inst.vars) return inst.vars[name];
+        return this.globals[name] ?? 0;
+    }
+  },
+
+  setVar(inst, name, val) {
+    switch (name) {
+      case 'x':        inst.x       = val; break;
+      case 'y':        inst.y       = val; break;
+      case 'vx':       inst.vx      = val; break;
+      case 'vy':       inst.vy      = val; break;
+      case 'grounded': inst.grounded= val; break;
+      case 'hp':       inst.hp      = val; break;
+      case 'speed':    inst.speed   = val; break;
+      case 'facing':   inst.facing  = val; break;
+      case 'frame':    inst.frame   = val; break;
+      default:         inst.vars[name] = val;
+    }
+  },
+
+  callBuiltin(inst, fn, args) {
+    const ev = a => this.evalExpr(inst, a);
+    switch (fn) {
+      case 'destroy': inst.active = false; break;
+      case 'jump':    if (inst.grounded) { inst.vy = ev(args[0]) || this.data.physics?.jump_force || -9; inst.grounded = false; } break;
+      case 'move':    inst.x += Number(ev(args[0])||0); inst.y += Number(ev(args[1])||0); break;
+      case 'set_room':this.startRoom(String(ev(args[0]))); break;
+      case 'spawn':   this.createInstance(String(ev(args[0])), Number(ev(args[1])||0), Number(ev(args[2])||0)); break;
+      case 'sound':   this.playSound(String(ev(args[0]))); break;
+      case 'message': this.showMessage(String(ev(args[0]))); break;
+      case 'set_global': this.globals[String(ev(args[0]))] = ev(args[1]); break;
+    }
+  },
+
+  callBuiltinExpr(inst, fn, args) {
+    const ev = a => this.evalExpr(inst, a);
+    switch (fn) {
+      case 'key':      { const k=String(ev(args[0])); return this.keys[k]||this.keys['Key'+k.toUpperCase()]||false; }
+      case 'key_down': { const k=String(ev(args[0])); return this.keysDown[k]||false; }
+      case 'global':   return this.globals[String(ev(args[0]))] ?? 0;
+      case 'abs':      return Math.abs(Number(ev(args[0])));
+      case 'max':      return Math.max(Number(ev(args[0])), Number(ev(args[1])));
+      case 'min':      return Math.min(Number(ev(args[0])), Number(ev(args[1])));
+      case 'floor':    return Math.floor(Number(ev(args[0])));
+      case 'rand':     return Math.random() * (Number(ev(args[0]))||1);
+      case 'sign':     return Math.sign(Number(ev(args[0])));
+      default: return 0;
+    }
+  },
+
+  /* ─────────────────────────
+     UPDATE LOOP
+  ───────────────────────── */
+  update() {
+    if (!this.room) return;
+    const physics  = this.data.physics || {};
+    const gravity  = physics.gravity      ?? 0.4;
+    const maxFall  = physics.max_fall_speed ?? 14;
+    const gtype    = this.data.game_type  || 'platformer';
+
+    /* Copy so destroy mid-loop is safe */
+    const alive = this.instances.filter(i => i.active);
+
+    for (const inst of alive) {
+      /* Run object update script */
+      this.runEvent(inst, 'update');
+      if (!inst.active) continue;
+
+      if (gtype === 'platformer') {
+        /* Gravity */
+        if (!inst.grounded) inst.vy = Math.min(inst.vy + gravity, maxFall);
+        /* Move X then check collision */
+        inst.x += inst.vx;
+        if (inst.obj.role !== 'bullet') {
+          const cx = this.resolveX(inst);
+          if (cx !== null) { inst.x = cx; this._triggerCollide(inst, 'solid', 'side'); inst.vx = 0; }
+        }
+        /* Move Y then check collision */
+        const wasGrounded = inst.grounded;
+        inst.grounded = false;
+        inst.y += inst.vy;
+        if (inst.obj.role !== 'bullet') {
+          const cy = this.resolveY(inst, wasGrounded);
+          if (cy !== null) {
+            const dir = inst.vy > 0 ? 'bottom' : 'top';
+            inst._colDir = dir;
+            inst.y = cy;
+            if (inst.vy > 0) inst.grounded = true;
+            this._triggerCollide(inst, 'solid', dir);
+            inst.vy = 0;
+          }
+        }
+      } else if (gtype === 'top_down' || gtype === 'rpg') {
+        inst.x += inst.vx;
+        const cx = this.resolveX(inst);
+        if (cx !== null) { inst.x = cx; inst.vx = 0; }
+        inst.y += inst.vy;
+        const cy = this.resolveY(inst, false);
+        if (cy !== null) { inst.y = cy; inst.vy = 0; }
+      }
+
+      /* Animate sprite */
+      if (inst.frameCount > 1) {
+        inst.frameTmr++;
+        if (inst.frameTmr >= 60 / Math.max(1, inst.animFps)) {
+          inst.frameTmr = 0;
+          inst.frame = (inst.frame + 1) % inst.frameCount;
+        }
+      }
+    }
+
+    /* Object–Object collisions */
+    this.checkObjCollisions();
+
+    /* Camera follows player */
+    const player = this.getPlayer();
+    if (player) {
+      const sc = this.data.screen;
+      const targetX = player.x - sc.w / 2;
+      const targetY = player.y - sc.h / 2;
+      const roomPxW = (this.room.w * this.room.tile_w);
+      const roomPxH = (this.room.h * this.room.tile_h);
+      this.camX = Math.max(0, Math.min(targetX, roomPxW - sc.w));
+      this.camY = Math.max(0, Math.min(targetY, roomPxH - sc.h));
+      /* Update HUD */
+      document.getElementById('hud-hp').textContent = 'HP: ' + (player.hp|0);
+    }
+
+    /* Remove dead instances */
+    this.instances = this.instances.filter(i => i.active);
+
+    /* Handle message queue */
+    if (this.msgQueue.length > 0 && !document.getElementById('msg-box').style.display.includes('block')) {
+      const msg = this.msgQueue.shift();
+      this.showMessage(msg);
+    }
+
+    /* Clear per-frame key state */
+    this.keysDown = {};
+    this.keysUp   = {};
+    this.frame++;
+  },
+
+  /* ─────────────────────────
+     COLLISION
+  ───────────────────────── */
+  getTile(col, row) {
+    if (!this.room) return 0;
+    if (col < 0 || row < 0 || col >= this.room.w || row >= this.room.h) return 1;
+    return this.room.tiles[row * this.room.w + col] || 0;
+  },
+
+  isSolid(col, row) { return this.getTile(col, row) === 1; },
+
+  /* Returns corrected X if overlap, null otherwise */
+  resolveX(inst) {
+    const tw = this.room.tile_w, th = this.room.tile_h;
+    const l  = Math.floor(inst.x / tw);
+    const r  = Math.floor((inst.x + inst.fw - 1) / tw);
+    const t  = Math.floor(inst.y / th);
+    const b  = Math.floor((inst.y + inst.fh - 1) / th);
+    for (let row = t; row <= b; row++) {
+      for (let col = l; col <= r; col++) {
+        if (this.isSolid(col, row)) {
+          return inst.vx > 0
+            ? col * tw - inst.fw
+            : (col + 1) * tw;
+        }
+      }
+    }
+    return null;
+  },
+
+  resolveY(inst, wasGrounded) {
+    const tw = this.room.tile_w, th = this.room.tile_h;
+    const l  = Math.floor(inst.x / tw);
+    const r  = Math.floor((inst.x + inst.fw - 1) / tw);
+    const t  = Math.floor(inst.y / th);
+    const b  = Math.floor((inst.y + inst.fh - 1) / th);
+    for (let row = t; row <= b; row++) {
+      for (let col = l; col <= r; col++) {
+        if (this.isSolid(col, row)) {
+          return inst.vy > 0
+            ? row * th - inst.fh
+            : (row + 1) * th;
+        }
+      }
+    }
+    return null;
+  },
+
+  _triggerCollide(inst, type, dir) {
+    inst._colDir = dir;
+    this.runEvent(inst, 'collide_' + type);
+    this.runEvent(inst, 'collide_solid');
+  },
+
+  checkObjCollisions() {
+    for (let a = 0; a < this.instances.length; a++) {
+      for (let b = a + 1; b < this.instances.length; b++) {
+        const ia = this.instances[a];
+        const ib = this.instances[b];
+        if (!ia.active || !ib.active) continue;
+        if (this.overlaps(ia, ib)) {
+          const nameA = ia.obj.role || ia.obj.name;
+          const nameB = ib.obj.role || ib.obj.name;
+          this.runEvent(ia, 'collide_' + nameB);
+          this.runEvent(ib, 'collide_' + nameA);
+          if (ia.obj.role === 'player' || ib.obj.role === 'player') {
+            const player  = ia.obj.role === 'player' ? ia : ib;
+            const other   = ia.obj.role === 'player' ? ib : ia;
+            const othName = other.obj.role || other.obj.name;
+            this.runEvent(player, 'collide_' + othName);
+            this.runEvent(other, 'collide_player');
+          }
+        }
+      }
+    }
+  },
+
+  overlaps(a, b) {
+    return a.x < b.x + b.fw && a.x + a.fw > b.x &&
+           a.y < b.y + b.fh && a.y + a.fh > b.y;
+  },
+
+  /* ─────────────────────────
+     RENDER
+  ───────────────────────── */
+  render() {
+    const { ctx, canvas, room } = this;
+    if (!room) return;
+    ctx.fillStyle = room.bg_color || '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(-this.camX, -this.camY);
+
+    /* Tiles */
+    const tw = room.tile_w, th = room.tile_h;
+    const startCol = Math.max(0, Math.floor(this.camX / tw));
+    const endCol   = Math.min(room.w, Math.ceil((this.camX + canvas.width)  / tw));
+    const startRow = Math.max(0, Math.floor(this.camY / th));
+    const endRow   = Math.min(room.h, Math.ceil((this.camY + canvas.height) / th));
+
+    for (let row = startRow; row < endRow; row++) {
+      for (let col = startCol; col < endCol; col++) {
+        const tile = room.tiles[row * room.w + col];
+        if (!tile) continue;
+        const x = col * tw, y = row * th;
+        if (tile === 1) {
+          /* Solid — draw like UE grey block */
+          ctx.fillStyle = '#8a8a8a';
+          ctx.fillRect(x, y, tw, th);
+          ctx.fillStyle = '#9e9e9e';
+          ctx.fillRect(x, y, tw, 2);
+          ctx.fillRect(x, y, 2, th);
+          ctx.fillStyle = '#6e6e6e';
+          ctx.fillRect(x + tw - 2, y, 2, th);
+          ctx.fillRect(x, y + th - 2, tw, 2);
+        }
+      }
+    }
+
+    /* Instances (sorted by depth) */
+    const sorted = [...this.instances].sort((a,b) => (a.obj.depth||0) - (b.obj.depth||0));
+    for (const inst of sorted) {
+      if (!inst.active) continue;
+      const img = inst.obj.sprite ? this.spriteImgs[inst.obj.sprite] : null;
+      const sprData = inst.obj.sprite ? (this.data.sprites||[]).find(s=>s.id===inst.obj.sprite) : null;
+
+      ctx.save();
+      if (img && sprData) {
+        const fw = sprData.frame_w || img.naturalWidth || tw;
+        const fh = sprData.frame_h || img.naturalHeight || th;
+        const fc = sprData.frame_count || 1;
+        const frame = Math.floor(inst.frame) % fc;
+        ctx.translate(inst.x + (inst.facing < 0 ? fw : 0), inst.y);
+        if (inst.facing < 0) ctx.scale(-1, 1);
+        try { ctx.drawImage(img, frame * fw, 0, fw, fh, 0, 0, fw, fh); }
+        catch(e) { /* corrupt image, skip */ }
+      } else {
+        /* Fallback colored rect */
+        const colors = ['#e06c75','#61afef','#98c379','#e5c07b','#c678dd','#56b6c2','#abb2bf'];
+        const ci = (inst.objId || '').split('').reduce((s,c)=>s+c.charCodeAt(0),0) % colors.length;
+        ctx.fillStyle = colors[ci];
+        ctx.fillRect(inst.x, inst.y, inst.fw, inst.fh);
+        ctx.fillStyle = 'rgba(0,0,0,.3)';
+        ctx.font = '7px monospace';
+        ctx.fillText(inst.obj.name.slice(0,6), inst.x+2, inst.y+10);
+      }
+      ctx.restore();
+    }
+
+    ctx.restore();
+  },
+
+  /* ─────────────────────────
+     AUDIO
+  ───────────────────────── */
+  playSound(id) {
+    if (!this.audioCtx) {
+      try { this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e) { return; }
+    }
+    /* Beep fallback if no audio asset */
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.connect(gain); gain.connect(this.audioCtx.destination);
+    osc.frequency.value = id === 'pickup' ? 880 : id === 'jump' ? 440 : 220;
+    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.15);
+    osc.start(this.audioCtx.currentTime);
+    osc.stop(this.audioCtx.currentTime + 0.15);
+  },
+
+  showMessage(text) {
+    const box = document.getElementById('msg-box');
+    box.textContent = text;
+    box.style.display = 'block';
+    clearTimeout(this._msgTimer);
+    this._msgTimer = setTimeout(() => { box.style.display = 'none'; }, 2500);
+  },
+
+  /* ─────────────────────────
+     UI HELPERS
+  ───────────────────────── */
+  showOverlay(show) {
+    document.getElementById('overlay').classList.toggle('hidden', !show);
+  },
+
+  /* ─────────────────────────
+     MAIN LOOP
+  ───────────────────────── */
+  loop() {
+    if (!this.paused) {
+      this.update();
+      this.render();
+    }
+    this.animId = requestAnimationFrame(() => this.loop());
+  },
+
+  start() {
+    if (!this.data) return;
+    this.paused = false;
+    this.showOverlay(false);
+    this.startRoom(this.data.start_room || this.data.rooms?.[0]?.id);
+    if (!this.animId) this.loop();
+  },
+
+  pause() {
+    this.paused = !this.paused;
+    document.getElementById('overlay-title').textContent = this.paused ? 'PAUSED' : '';
+    this.showOverlay(this.paused);
+  },
+
+  restart() {
+    this.paused = false;
+    this.showOverlay(false);
+    this.startRoom(this.data.start_room || this.data.rooms?.[0]?.id);
+  },
+
+  /* ─────────────────────────
+     INPUT
+  ───────────────────────── */
+  initInput() {
+    window.addEventListener('keydown', e => {
+      if (!this.data) return;
+      if (e.code === 'Enter' && this.paused) { this.start(); return; }
+      if (e.code === 'Escape') { this.pause(); return; }
+      if (e.code === 'KeyR' && !this.paused) { this.restart(); return; }
+      if ([32,37,38,39,40].includes(e.keyCode)) e.preventDefault();
+      this.keys[e.code] = true;
+      this.keysDown[e.code] = true;
+    });
+    window.addEventListener('keyup', e => {
+      this.keys[e.code] = false;
+      this.keysUp[e.code] = true;
+    });
+    /* Touch d-pad */
+    this._touchDpad();
+  },
+
+  _touchDpad() {
+    const map = { 'btn-left':'ArrowLeft','btn-right':'ArrowRight','btn-up':'ArrowUp','btn-b':'Space','btn-a':'Space' };
+    Object.entries(map).forEach(([id, code]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('touchstart', e => { e.preventDefault(); this.keys[code] = true; this.keysDown[code] = true; }, {passive:false});
+      el.addEventListener('touchend',   e => { e.preventDefault(); this.keys[code] = false; }, {passive:false});
+    });
+  },
+
+  init() {
+    this.canvas = document.getElementById('game');
+    this.initInput();
+
+    /* File drop */
+    const dz = document.getElementById('drop-zone');
+    dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('over');
+      const file = e.dataTransfer.files[0];
+      if (file) this._readFile(file);
+    });
+    dz.addEventListener('click', () => document.getElementById('file-input').click());
+    document.getElementById('btn-open').addEventListener('click', e => { e.stopPropagation(); document.getElementById('file-input').click(); });
+    document.getElementById('file-input').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) this._readFile(file);
+    });
+  },
+
+  _readFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => this.load(e.target.result);
+    reader.readAsText(file);
+  }
+};
+
+NOR.init();
+</script>
+</body>
+</html>

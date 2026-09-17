@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#315db9" />
+      <stop offset="100%" stop-color="#19336d" />
+    </linearGradient>
+    <filter id="drop-shadow">
+      <feDropShadow dx="4" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)" />
+
+  <g filter="url(#drop-shadow)">
+    <!-- Retro Window -->
+    <path d="M 80 112 A 32 32 0 0 1 112 80 L 400 80 A 32 32 0 0 1 432 112 L 432 400 A 32 32 0 0 1 400 432 L 112 432 A 32 32 0 0 1 80 400 Z" fill="#ece9d8" stroke="#aca899" stroke-width="4" />
+
+    <!-- Window Title Bar -->
+    <path d="M 82 112 A 30 30 0 0 1 112 82 L 400 82 A 30 30 0 0 1 430 112 L 430 132 L 82 132 Z" fill="#315db9" />
+
+    <!-- Title Bar Buttons -->
+    <rect x="385" y="96" width="20" height="20" rx="4" fill="#e60012" />
+    <rect x="355" y="96" width="20" height="20" rx="4" fill="#aca899" />
+    <rect x="325" y="96" width="20" height="20" rx="4" fill="#aca899" />
+  </g>
+
+  <!-- Pixel N -->
+  <g transform="translate(136, 170)" filter="url(#drop-shadow)">
+    <!-- Main Black Border -->
+    <path d="M 0 0 H 60 V 180 H 0 Z M 180 0 H 240 V 180 H 180 Z" fill="#222" />
+    <polygon points="40,20 190,170 200,170 200,150 50,0 40,0" fill="#222" />
+
+    <!-- Inner Blue Fill -->
+    <path d="M 10 10 H 50 V 170 H 10 Z M 190 10 H 230 V 170 H 190 Z" fill="#316ac5" />
+    <polygon points="46,26 186,166 195,166 195,153 58,8 46,8" fill="#316ac5" />
+
+    <!-- Pixel Highlights -->
+    <path d="M 10 10 H 50 V 18 H 10 Z M 190 10 H 230 V 18 H 190 Z" fill="#7a96df" />
+  </g>
+
+  <!-- Gamepad D-Pad & Buttons decoration inside the window -->
+  <g transform="translate(140, 375)">
+    <!-- D-Pad -->
+    <rect x="20" y="15" width="30" height="10" fill="#716f64" />
+    <rect x="30" y="5" width="10" height="30" fill="#716f64" />
+    <!-- Buttons -->
+    <circle cx="200" cy="20" r="12" fill="#e60012" />
+    <circle cx="230" cy="10" r="12" fill="#e60012" />
+  </g>
+
+  <!-- AI Sparkles -->
+  <g fill="#ffeb3b" filter="url(#drop-shadow)">
+    <path d="M 380 140 Q 380 170 410 170 Q 380 170 380 200 Q 380 170 350 170 Q 380 170 380 140 Z" />
+    <path d="M 110 320 Q 110 340 130 340 Q 110 340 110 360 Q 110 340 90 340 Q 110 340 110 320 Z" />
+    <path d="M 320 370 Q 320 380 330 380 Q 320 380 320 390 Q 320 380 310 380 Q 320 380 320 370 Z" />
+  </g>
+
+</svg>

@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/app/applet/app/.cxx/Debug/4g1m6z65/arm64-v8a",
+  "command": "/opt/android/sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android23 --sysroot=/opt/android/sdk/ndk/25.1.8937393/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dgm82_android_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -fno-limit-debug-info  -fPIC -o CMakeFiles/gm82_android.dir/gm82_jni.c.o -c /app/applet/app/src/main/cpp/gm82_jni.c",
+  "file": "/app/applet/app/src/main/cpp/gm82_jni.c"
+}
+]

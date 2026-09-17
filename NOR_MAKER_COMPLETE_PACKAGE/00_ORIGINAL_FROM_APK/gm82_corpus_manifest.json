@@ -1,0 +1,41 @@
+{
+  "schema": "nor-maker-gm82-corpus/v1",
+  "source_of_truth": "fixtures must be exported by GameMaker 8.2; synthetic files are marked synthetic and cannot prove L2",
+  "levels": [
+    {"id":"00_empty","path":"gm82/00_empty","purpose":"baseline project with no optional resources"},
+    {"id":"10_sprite","path":"gm82/10_sprite","purpose":"isolated Sprite serialization and payload boundaries"},
+    {"id":"20_object","path":"gm82/20_object","purpose":"Object properties, events, actions and GML"},
+    {"id":"30_room","path":"gm82/30_room","purpose":"Room settings, views, instances, tiles and creation code"},
+    {"id":"90_real_projects","path":"gm82/90_real_projects","purpose":"full real-world projects, including IA.gmk and shotgun.gmk"},
+    {"id":"99_negative","path":"gm82/99_negative","purpose":"truncation, invalid lengths, invalid IDs and malformed payloads"}
+  ],
+  "fixtures": [
+    {"id":"SPR-00-empty","kind":"sprite","level":"10_sprite","file":"sprite_00_empty.gmk","source":"gm82_export","change":"none","required":true,"assertions":["sprite count is zero or baseline table is present"]},
+    {"id":"SPR-01-basic","kind":"sprite","level":"10_sprite","file":"sprite_01_basic.gmk","source":"gm82_export","change":"one 16x16 opaque sprite, origin 0,0, one frame","required":true,"assertions":["name","width","height","origin","bbox","frame count","image payload"]},
+    {"id":"SPR-02-origin","kind":"sprite","level":"10_sprite","file":"sprite_02_origin.gmk","source":"gm82_export","change":"same sprite, origin 8,8","required":true,"assertions":["origin changes without image payload corruption"]},
+    {"id":"SPR-03-multiframe","kind":"sprite","level":"10_sprite","file":"sprite_03_multiframe.gmk","source":"gm82_export","change":"three frames with distinct pixels","required":true,"assertions":["subimage order","frame count","per-frame payload"]},
+    {"id":"SPR-04-mask","kind":"sprite","level":"10_sprite","file":"sprite_04_mask.gmk","source":"gm82_export","change":"precise mask and custom bbox","required":true,"assertions":["collision mode","bbox","mask data or preserved raw payload"]},
+    {"id":"SPR-05-options","kind":"sprite","level":"10_sprite","file":"sprite_05_options.gmk","source":"gm82_export","change":"transparent, smooth, preload and separate mask combinations","required":true,"assertions":["flags","preload","separate mask"]},
+    {"id":"OBJ-00-basic","kind":"object","level":"20_object","file":"object_00_basic.gmk","source":"gm82_export","change":"one object with no events","required":true,"assertions":["name","sprite id","parent id","mask id","depth","visible","solid","persistent"]},
+    {"id":"OBJ-01-create-gml","kind":"object","level":"20_object","file":"object_01_create_gml.gmk","source":"gm82_export","change":"Create event with Execute Code action","required":true,"assertions":["event main/subtype","action order","GML source","action arguments"]},
+    {"id":"OBJ-02-multievent","kind":"object","level":"20_object","file":"object_02_multievent.gmk","source":"gm82_export","change":"Create, Step, Draw and Alarm events","required":true,"assertions":["event ordering","subtypes","independent action lists"]},
+    {"id":"OBJ-03-collision","kind":"object","level":"20_object","file":"object_03_collision.gmk","source":"gm82_export","change":"collision event with another object","required":true,"assertions":["collision target","event identity","actions"]},
+    {"id":"OBJ-04-actions","kind":"object","level":"20_object","file":"object_04_actions.gmk","source":"gm82_export","change":"built-in actions with strings, expressions, booleans and resource IDs","required":true,"assertions":["library/action IDs","argument types","argument order","resource references"]},
+    {"id":"OBJ-05-inheritance","kind":"object","level":"20_object","file":"object_05_inheritance.gmk","source":"gm82_export","change":"parent object and inherited events","required":true,"assertions":["parent id","inheritance flags","event representation"]},
+    {"id":"ROOM-00-empty","kind":"room","level":"30_room","file":"room_00_empty.gmk","source":"gm82_export","change":"one empty room","required":true,"assertions":["name","caption","width","height","speed","persistent"]},
+    {"id":"ROOM-01-view","kind":"room","level":"30_room","file":"room_01_view.gmk","source":"gm82_export","change":"one enabled view with borders, port and camera","required":true,"assertions":["view flags","camera rectangle","port rectangle","border/speed","follow object"]},
+    {"id":"ROOM-02-instance","kind":"room","level":"30_room","file":"room_02_instance.gmk","source":"gm82_export","change":"one object instance at 32,64 with creation code","required":true,"assertions":["instance id","object id","x/y","locked","creation code","order"]},
+    {"id":"ROOM-03-instances","kind":"room","level":"30_room","file":"room_03_instances.gmk","source":"gm82_export","change":"three instances with distinct IDs and depths","required":true,"assertions":["instance order","IDs","positions","creation code"]},
+    {"id":"ROOM-04-tile","kind":"room","level":"30_room","file":"room_04_tile.gmk","source":"gm82_export","change":"one tile with background, source rectangle, depth and lock","required":true,"assertions":["tile ID","background ID","source rectangle","position","depth","locked"]},
+    {"id":"ROOM-05-combined","kind":"room","level":"30_room","file":"room_05_combined.gmk","source":"gm82_export","change":"views, instances, tiles and room creation code together","required":true,"assertions":["all lists","list boundaries","ordering","cross-resource IDs"]},
+    {"id":"REAL-IA","kind":"project","level":"90_real_projects","file":"IA.gmk","source":"provided_real","change":"existing supplied project","required":true,"assertions":["probe","partial manifest","raw preservation"]},
+    {"id":"REAL-shotgun","kind":"project","level":"90_real_projects","file":"shotgun.gmk","source":"provided_real","change":"existing supplied project","required":true,"assertions":["probe","partial manifest","raw preservation"]}
+  ],
+  "negative_tests": [
+    {"id":"NEG-truncated-header","input":"gmk_payload_fixture_truncated.gmk","assertion":"invalid or partial without crash"},
+    {"id":"NEG-truncate-each-chunk","method":"remove each suffix byte around discovered chunk boundaries","assertion":"invalid or partial, never out-of-bounds"},
+    {"id":"NEG-invalid-count","method":"mutate resource count","assertion":"bounded rejection"},
+    {"id":"NEG-invalid-id","method":"mutate object/resource references","assertion":"diagnostic or preserved unknown reference"}
+  ],
+  "l2_gate": ["all required source fixtures are present", "reader IR canonicalization is stable", "writer-reader round-trip has zero semantic diff", "unknown bytes are preserved", "ASan and UBSan are clean"]
+}

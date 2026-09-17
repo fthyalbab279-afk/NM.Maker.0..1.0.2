@@ -1,0 +1,5 @@
+GMK_PHASE_1_2_INTEGRATION
+format contract: app/src/main/cpp/gm82_gmk_format.h
+reader API: gm82_gmk_probe + gm82_gmk_resource_manifest_json
+JNI valid_gmk_header delegates to gm82_gmk_probe
+tests: GMK_PROBE_CONTRACT_PASS, ROOM_DETAIL_REGRESSION_PASS, ROOM_TRUNCATION_GUARD_PASS

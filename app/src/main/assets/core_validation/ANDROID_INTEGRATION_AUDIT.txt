@@ -1,0 +1,12 @@
+NOR Maker 0.1 Android integration audit
+
+Target project: android_project_base
+
+The Java MainActivity declares 51 native methods. The native core exports 51 matching JNI symbols under Java_com_normaker_nativefull_MainActivity_*. Missing exports: 0. Undeclared exports: 0.
+
+Native source location: app/src/main/cpp
+Native library: gm82_android
+Build configuration: app/build.gradle + app/src/main/cpp/CMakeLists.txt
+Validation evidence is packaged in this assets directory.
+
+A new APK could not be compiled in the current sandbox because Android SDK tools/platforms are absent. Existing APKs outside this project are not relabeled as containing this update.

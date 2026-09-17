@@ -1,0 +1,8 @@
+{
+  "name": "NOR Maker",
+  "description": "NOR Maker 8.2 & GM82/GMK Full Native & Web Simulation Engine for Android",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
