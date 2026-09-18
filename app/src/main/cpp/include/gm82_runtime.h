@@ -17,6 +17,11 @@ typedef struct gm82_action_table gm82_action_table;
 #define GM82_MAX_INSTANCES 2048
 
 typedef struct {
+    char name[32];
+    double value;
+} gm82_var;
+
+typedef struct {
     int32_t id;
     int32_t object_index;
     int32_t sprite_index;
@@ -42,6 +47,8 @@ typedef struct {
     double  timeline_position;
     double  timeline_speed;
     int32_t timeline_running;
+    gm82_var vars[32];
+    int32_t  var_count;
 } gm82_instance;
 
 typedef struct {
