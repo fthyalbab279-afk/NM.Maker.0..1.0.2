@@ -278,7 +278,6 @@ double gml_room(void) {
     return g_rt ? (double)g_rt->current_room : 0;
 }
 
-/* Audio functions provided by gm82_sound_runtime.c */
 
 double gml_room_restart(void) {
     if (!g_rt) return 0;
