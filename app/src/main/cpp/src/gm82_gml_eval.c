@@ -111,7 +111,17 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
             }
         }
     }
-    /* unknown identifier: treat as 0 so assignment chains don't abort whole block */
+    /* Check custom instance variables */
+    if (s) {
+        for (int k = 0; k < s->var_count; k++) {
+            if (strcmp(s->vars[k].name, name) == 0) {
+                *out = s->vars[k].value;
+                return true;
+            }
+        }
+    }
+
+    /* unknown identifier: default 0 */
     *out = 0;
     return true;
 }
@@ -135,6 +145,24 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
+
+    /* Set custom instance variable */
+    if (s) {
+        for (int k = 0; k < s->var_count; k++) {
+            if (strcmp(s->vars[k].name, name) == 0) {
+                s->vars[k].value = v;
+                return true;
+            }
+        }
+        if (s->var_count < 32) {
+            strncpy(s->vars[s->var_count].name, name, 31);
+            s->vars[s->var_count].name[31] = 0;
+            s->vars[s->var_count].value = v;
+            s->var_count++;
+            return true;
+        }
+    }
+
     snprintf(p->err, sizeof(p->err), "cannot set %s", name);
     return false;
 }
@@ -399,6 +427,62 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         if (else_buf[0]) {
             if (else_buf[0] == '{') return gm82_gml_eval_block(rt, self, else_buf) > 0;
             return gm82_gml_eval_stmt(rt, self, else_buf);
+        }
+        return true;
+    }
+
+    /* repeat (count) { body } */
+    if (strcmp(id, "repeat") == 0) {
+        double count = 0;
+        skip_ws(&p);
+        if (peek(&p) == '(') { getc_(&p); parse_expr(&p, &count); match(&p, ')'); }
+        else parse_expr(&p, &count);
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int n = (int)count;
+        for (int r = 0; r < n; r++) {
+            if (body[0] == '{') gm82_gml_eval_block(rt, self, body);
+            else gm82_gml_eval_stmt(rt, self, body);
+        }
+        return true;
+    }
+
+    /* while (cond) { body } */
+    if (strcmp(id, "while") == 0) {
+        skip_ws(&p);
+        const char *cond_expr = p.s + p.i;
+        double cond = 0;
+        parse_expr(&p, &cond);
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int max_iters = 10000;
+        while (max_iters-- > 0) {
+            gml_parser cp = { cond_expr, 0, strlen(cond_expr), rt, self, {0} };
+            if (cp.s[0] == '(') { cp.i++; parse_expr(&cp, &cond); match(&cp, ')'); }
+            else parse_expr(&cp, &cond);
+            if (cond == 0) break;
+            if (body[0] == '{') gm82_gml_eval_block(rt, self, body);
+            else gm82_gml_eval_stmt(rt, self, body);
+        }
+        return true;
+    }
+
+    /* with (target) { body } */
+    if (strcmp(id, "with") == 0 && rt) {
+        double target = -1;
+        skip_ws(&p);
+        if (peek(&p) == '(') { getc_(&p); parse_expr(&p, &target); match(&p, ')'); }
+        else parse_expr(&p, &target);
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        int32_t tval = (int32_t)target;
+        for (int k = 0; k < rt->instance_count; k++) {
+            gm82_instance *o = &rt->instances[k];
+            if (!o->alive) continue;
+            if (tval < 0 || o->object_index == tval || o->id == tval) {
+                if (body[0] == '{') gm82_gml_eval_block(rt, o, body);
+                else gm82_gml_eval_stmt(rt, o, body);
+            }
         }
         return true;
     }
