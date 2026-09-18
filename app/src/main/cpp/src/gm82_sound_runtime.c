@@ -17,13 +17,12 @@ void gm82_sound_runtime_bind(gm82_sound_runtime *sr, const gm82_decoded_sound_li
 }
 
 int gm82_sound_play(gm82_sound_runtime *sr, int sound_index, int loop) {
-    if (!sr || !sr->sounds) return 0;
-    if (sound_index < 0 || sound_index >= sr->sounds->count) return 0;
+    if (!sr) return 0;
     sr->play_count++;
     sr->last_played_index = sound_index;
     if (sr->queue_len < 32) {
         sr->queue[sr->queue_len].sound_index = sound_index;
-        sr->queue[sr->queue_len].volume = sr->sounds->items[sound_index].volume;
+        sr->queue[sr->queue_len].volume = (sr->sounds && sound_index >= 0 && sound_index < sr->sounds->count) ? sr->sounds->items[sound_index].volume : 1.0;
         sr->queue[sr->queue_len].loop = loop;
         sr->queue_len++;
     }

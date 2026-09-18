@@ -20,6 +20,12 @@ typedef enum gm82_gmk_parse_status {
     GM82_GMK_PARSE_DECODED = 2
 } gm82_gmk_parse_status;
 
+typedef enum gm82_resource_status {
+    GM82_RES_RAW      = 0,
+    GM82_RES_PARTIAL  = 1,
+    GM82_RES_DECODED  = 2
+} gm82_resource_status;
+
 typedef struct gm82_gmk_probe_result {
     gm82_gmk_format_kind format_kind;
     gm82_gmk_parse_status status;

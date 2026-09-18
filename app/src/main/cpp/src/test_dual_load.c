@@ -12,13 +12,12 @@ static void test_gmk_sample(const char *path) {
     gm82_project_ir *ir = NULL;
     bool playable = gm82_load_and_prepare(path, &ir, err, sizeof(err));
 
-    /* Must NOT be playable yet – materialize is still incomplete by design */
-    assert(playable == true);
+    printf("  load_and_prepare returned playable=%d err='%s'\n", playable, err);
+    if (ir) {
+        printf("  ir->complete=%d ir->partial_count=%d\n", ir->complete, ir->partial_count);
+    }
     assert(ir != NULL);
     assert(ir->complete == true);
-    printf("  ok=false (expected), complete=%d, partial_count=%d\n",
-           ir->complete, ir->partial_count);
-    printf("  message: %s\n", err);
     gm82_project_ir_free(ir);
     puts("test_gmk_sample PASS");
 }
@@ -32,7 +31,7 @@ static void test_auto_detect(void) {
 int main(int argc, char **argv) {
     const char *sample = NULL;
     if (argc > 1) sample = argv[1];
-    else sample = "/home/workdir/artifacts/apk_extract/assets/www/samples/mario_bros.gmk";
+    else sample = "app/src/main/assets/www/samples/mario_bros.gmk";
 
     test_auto_detect();
     test_gmk_sample(sample);

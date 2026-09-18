@@ -111,7 +111,17 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
             }
         }
     }
-    /* unknown identifier: treat as 0 so assignment chains don't abort whole block */
+    /* Check custom instance variables */
+    if (s) {
+        for (int k = 0; k < s->var_count; k++) {
+            if (strcmp(s->vars[k].name, name) == 0) {
+                *out = s->vars[k].value;
+                return true;
+            }
+        }
+    }
+
+    /* unknown identifier: default 0 */
     *out = 0;
     return true;
 }
@@ -135,6 +145,24 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
+
+    /* Set custom instance variable */
+    if (s) {
+        for (int k = 0; k < s->var_count; k++) {
+            if (strcmp(s->vars[k].name, name) == 0) {
+                s->vars[k].value = v;
+                return true;
+            }
+        }
+        if (s->var_count < 32) {
+            strncpy(s->vars[s->var_count].name, name, 31);
+            s->vars[s->var_count].name[31] = 0;
+            s->vars[s->var_count].value = v;
+            s->var_count++;
+            return true;
+        }
+    }
+
     snprintf(p->err, sizeof(p->err), "cannot set %s", name);
     return false;
 }
@@ -416,27 +444,7 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         return true;
     }
 
-    /* with (obj/id) body */
-    if (strcmp(id, "with") == 0) {
-        double target_expr = 0;
-        skip_ws(&p);
-        if (peek(&p) == '(') {
-            getc_(&p);
-            if (!parse_expr(&p, &target_expr)) return false;
-            if (!match(&p, ')')) return false;
-        } else {
-            if (!parse_expr(&p, &target_expr)) return false;
-        }
-        skip_ws(&p);
-        const char *body = p.s + p.i;
-        if (!rt) return true;
-        int target_oi = (int)target_expr;
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *inst = &rt->instances[i];
-            if (!inst->alive) continue;
-            if (target_oi >= 0 && inst->object_index != target_oi && inst->id != target_oi) continue;
-            if (*body == '{') gm82_gml_eval_block(rt, inst, body);
-            else gm82_gml_eval_stmt(rt, inst, body);
+ main
         }
         return true;
     }

@@ -1,6 +1,19 @@
 #include <jni.h>
+#include <stdint.h>
+#include <stdlib.h>
+#ifdef __ANDROID__
 #include <android/log.h>
 #include <android/bitmap.h>
+#else
+#define ANDROID_LOG_INFO 4
+#define ANDROID_LOG_ERROR 6
+#define ANDROID_BITMAP_FORMAT_RGBA_8888 1
+typedef struct { uint32_t width; uint32_t height; uint32_t format; } AndroidBitmapInfo;
+static inline int AndroidBitmap_getInfo(JNIEnv* e, jobject o, AndroidBitmapInfo* i) { (void)e; (void)o; if (i) { i->width=640; i->height=480; i->format=1; } return 0; }
+static inline int AndroidBitmap_lockPixels(JNIEnv* e, jobject o, void** p) { (void)e; (void)o; if (p) *p = malloc(640*480*4); return 0; }
+static inline int AndroidBitmap_unlockPixels(JNIEnv* e, jobject o) { (void)e; (void)o; return 0; }
+static inline int __android_log_print(int prio, const char* tag, const char* fmt, ...) { (void)prio; (void)tag; (void)fmt; return 0; }
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -130,41 +143,7 @@ static char g_token_buf[1024] = {0};
 static char g_token_sep[16] = {0};
 static char *g_token_ctx = NULL;
 
-/* --- GMK Format Probe Implementation --- */
-gm82_gmk_probe_result gm82_gmk_probe(const uint8_t *data, size_t size) {
-    gm82_gmk_probe_result res;
-    memset(&res, 0, sizeof(res));
-    if (!data || size < 12) {
-        res.status = GM82_GMK_PARSE_INVALID;
-        res.error_code = "buffer_too_small";
-        return res;
-    }
-
-    uint32_t magic = (uint32_t)data[0] | ((uint32_t)data[1] << 8) | ((uint32_t)data[2] << 16) | ((uint32_t)data[3] << 24);
-    uint32_t version = (uint32_t)data[4] | ((uint32_t)data[5] << 8) | ((uint32_t)data[6] << 16) | ((uint32_t)data[7] << 24);
-    uint32_t app_id = (uint32_t)data[8] | ((uint32_t)data[9] << 8) | ((uint32_t)data[10] << 16) | ((uint32_t)data[11] << 24);
-
-    res.magic = (int32_t)magic;
-    res.version = (int32_t)version;
-    res.app_id = (int32_t)app_id;
-    res.header_bytes = 12;
-
-    if (magic != 1234321u) {
-        res.status = GM82_GMK_PARSE_INVALID;
-        res.error_code = "bad_magic";
-        return res;
-    }
-    if (version < 500u || version > 820u) {
-        res.status = GM82_GMK_PARSE_INVALID;
-        res.error_code = "unsupported_version";
-        return res;
-    }
-
-    res.status = GM82_GMK_PARSE_PARTIAL;
-    res.format_kind = (version == 810u) ? GM82_GMK_FORMAT_GM81 : GM82_GMK_FORMAT_GM7_GM8;
-    res.error_code = NULL;
-    return res;
-}
+/* GMK probe provided by gm82_gmk_format.c */
 
 /* --- Native Runtime Lifecycle --- */
 JNIEXPORT jboolean JNICALL

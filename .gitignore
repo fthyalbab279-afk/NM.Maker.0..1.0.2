@@ -4,6 +4,10 @@ dist/
 coverage/
 .DS_Store
 *.log
+*.o
+*.so
+*.a
+.cxx/
 .env*
 !.env.example
 Nor-maker-7-main/
