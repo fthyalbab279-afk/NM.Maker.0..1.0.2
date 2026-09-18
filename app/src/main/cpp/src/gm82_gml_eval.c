@@ -227,6 +227,19 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "instance_number") == 0) {
             *out = gml_instance_number(arg); return true;
         }
+        if (strcmp(id, "instance_exists") == 0) {
+            *out = gml_instance_exists(arg); return true;
+        }
+        if (strcmp(id, "instance_create") == 0) {
+            double xarg = arg;
+            double yarg = (nargs >= 2) ? args[1] : 0;
+            double oarg = (nargs >= 3) ? args[2] : 0;
+            *out = gml_instance_create(xarg, yarg, oarg); return true;
+        }
+        if (strcmp(id, "draw_self") == 0) {
+            if (p->self) gml_draw_sprite((double)p->self->sprite_index, p->self->x, p->self->y);
+            *out = 1; return true;
+        }
         if (strcmp(id, "gravedad") == 0) {
             /* user script in mario sample – apply simple gravity */
             if (p->self) { p->self->gravity = 0.4; p->self->gravity_direction = 270; }
@@ -399,6 +412,31 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         if (else_buf[0]) {
             if (else_buf[0] == '{') return gm82_gml_eval_block(rt, self, else_buf) > 0;
             return gm82_gml_eval_stmt(rt, self, else_buf);
+        }
+        return true;
+    }
+
+    /* with (obj/id) body */
+    if (strcmp(id, "with") == 0) {
+        double target_expr = 0;
+        skip_ws(&p);
+        if (peek(&p) == '(') {
+            getc_(&p);
+            if (!parse_expr(&p, &target_expr)) return false;
+            if (!match(&p, ')')) return false;
+        } else {
+            if (!parse_expr(&p, &target_expr)) return false;
+        }
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        if (!rt) return true;
+        int target_oi = (int)target_expr;
+        for (int i = 0; i < rt->instance_count; i++) {
+            gm82_instance *inst = &rt->instances[i];
+            if (!inst->alive) continue;
+            if (target_oi >= 0 && inst->object_index != target_oi && inst->id != target_oi) continue;
+            if (*body == '{') gm82_gml_eval_block(rt, inst, body);
+            else gm82_gml_eval_stmt(rt, inst, body);
         }
         return true;
     }
