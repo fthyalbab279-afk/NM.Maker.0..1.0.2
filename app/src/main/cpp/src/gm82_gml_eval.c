@@ -290,6 +290,17 @@ static bool parse_primary(gml_parser *p, double *out) {
             if (p->self) gml_draw_sprite((double)p->self->sprite_index, p->self->x, p->self->y);
             *out = 1; return true;
         }
+        if (p->rt && p->rt->scripts) {
+            int sidx = gm82_script_find(p->rt->scripts, id);
+            if (sidx >= 0) {
+                gm82_gml_set_script_args(args, nargs);
+                const char *code = p->rt->scripts->items[sidx].code;
+                if (code && code[0]) {
+                    *out = (double)gm82_gml_eval_block(p->rt, p->self, code);
+                    return true;
+                }
+            }
+        }
         if (strcmp(id, "gravedad") == 0) {
             /* user script in mario sample – apply simple gravity */
             if (p->self) { p->self->gravity = 0.4; p->self->gravity_direction = 270; }
