@@ -16,17 +16,22 @@ void gm82_sound_runtime_bind(gm82_sound_runtime *sr, const gm82_decoded_sound_li
     sr->sounds = sounds;
 }
 
+__attribute__((weak)) void gm82_enqueue_sound_command(int kind, int soundId, int loop, int prio, float volume) {
+    (void)kind; (void)soundId; (void)loop; (void)prio; (void)volume;
+}
+
 int gm82_sound_play(gm82_sound_runtime *sr, int sound_index, int loop) {
     if (!sr) return 0;
     sr->play_count++;
     sr->last_played_index = sound_index;
+    double vol = (sr->sounds && sound_index >= 0 && sound_index < sr->sounds->count) ? sr->sounds->items[sound_index].volume : 1.0;
     if (sr->queue_len < 32) {
         sr->queue[sr->queue_len].sound_index = sound_index;
-        sr->queue[sr->queue_len].volume = (sr->sounds && sound_index >= 0 && sound_index < sr->sounds->count) ? sr->sounds->items[sound_index].volume : 1.0;
+        sr->queue[sr->queue_len].volume = vol;
         sr->queue[sr->queue_len].loop = loop;
         sr->queue_len++;
     }
-    /* No device – event queued only */
+    gm82_enqueue_sound_command(1, sound_index, loop, 0, (float)vol);
     return 1;
 }
 
