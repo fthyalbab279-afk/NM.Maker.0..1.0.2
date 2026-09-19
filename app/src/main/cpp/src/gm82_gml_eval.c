@@ -466,11 +466,6 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         return true;
     }
 
- main
-        }
-        return true;
-    }
-
     skip_ws(&p);
     /* compound: += -= *= /= */
     char op = 0;
