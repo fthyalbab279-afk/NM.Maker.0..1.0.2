@@ -49,8 +49,30 @@ static bool parse_ident(gml_parser *p, char *buf, size_t buflen) {
     return j > 0;
 }
 
+static double g_script_args[16] = {0};
+static int g_script_arg_count = 0;
+
+void gm82_gml_set_script_args(const double *args, int count) {
+    g_script_arg_count = count > 16 ? 16 : (count < 0 ? 0 : count);
+    for (int i = 0; i < 16; i++) {
+        g_script_args[i] = (i < g_script_arg_count && args) ? args[i] : 0.0;
+    }
+}
+
+double gm82_gml_get_script_arg(int index) {
+    if (index < 0 || index >= 16) return 0.0;
+    return g_script_args[index];
+}
+
 static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
+    if (strncmp(name, "argument", 8) == 0 && isdigit((unsigned char)name[8])) {
+        int idx = atoi(name + 8);
+        if (idx >= 0 && idx < 16) {
+            *out = g_script_args[idx];
+            return true;
+        }
+    }
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
     if (strcmp(name, "hspeed") == 0) { *out = s ? s->hspeed : 0; return true; }

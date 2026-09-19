@@ -429,35 +429,6 @@ double gml_move_contact_solid(double dir, double maxdist) {
     return moved;
 }
 
-double gml_move_outside_solid(double dir, double maxdist) {
-    if (!g_rt || !g_self) return 0;
-    if (maxdist < 0) maxdist = 1000;
-    if (gml_place_free(g_self->x, g_self->y)) return 0;
-    double rad = dir * 3.141592653589793 / 180.0;
-    double dx = cos(rad), dy = -sin(rad);
-    double dist = 0;
-    while (dist < maxdist) {
-        g_self->x += dx;
-        g_self->y += dy;
-        dist += 1.0;
-        if (gml_place_free(g_self->x, g_self->y)) break;
-    }
-    return dist;
-}
-
-double gml_move_random(double hsnap, double vsnap) {
-    if (!g_rt || !g_self) return 0;
-    int hs = (int)hsnap > 0 ? (int)hsnap : 16;
-    int vs = (int)vsnap > 0 ? (int)vsnap : 16;
-    int cols = (int)g_rt->room_width / hs;
-    int rows = (int)g_rt->room_height / vs;
-    if (cols < 1) cols = 1;
-    if (rows < 1) rows = 1;
-    g_self->x = (double)((rand() % cols) * hs);
-    g_self->y = (double)((rand() % rows) * vs);
-    return 1;
-}
-
 double gml_sprite_get_width(double sprite) {
     if (!g_rt || !g_rt->sprites) return 0;
     int si = (int)sprite;
