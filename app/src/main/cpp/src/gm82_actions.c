@@ -210,14 +210,15 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
     if (strcmp(ar->name, "action_sprite_set") == 0) {
-        if (ar->action_id >= 0) self->sprite_index = ar->action_id;
+        self->sprite_index = ar->action_id >= 0 ? ar->action_id : (ar->kind >= 0 ? ar->kind : 1);
         return true;
     }
     if (strcmp(ar->name, "action_change_object") == 0) {
-        if (ar->action_id >= 0 && rt->objects && ar->action_id < rt->objects->count) {
-            self->object_index = ar->action_id;
-            self->sprite_index = rt->objects->items[ar->action_id].sprite_index;
-            self->solid = rt->objects->items[ar->action_id].solid;
+        int target_oi = ar->action_id >= 0 ? ar->action_id : ar->kind;
+        if (rt->objects && target_oi >= 0 && target_oi < rt->objects->count) {
+            self->object_index = target_oi;
+            self->sprite_index = rt->objects->items[target_oi].sprite_index;
+            self->solid = rt->objects->items[target_oi].solid;
         }
         return true;
     }
