@@ -42,27 +42,17 @@ int main(int argc, char **argv) {
 
     gm82_runtime_goto_room(&rt, 0);
 
-    if (rt.instance_count == 0) {
-        printf("FAIL: 0 instances in room 0\n");
-        return 1;
-    }
-
-    /* Find object obj_minimario_trans or obj_minimario */
+    /* Find object obj_minimario_trans */
     int target_oi = -1;
     for (int o = 0; o < objs.count; o++) {
-        if (strcmp(objs.items[o].name, "obj_minimario_trans") == 0 ||
-            strcmp(objs.items[o].name, "obj_minimario") == 0) {
+        if (strcmp(objs.items[o].name, "obj_minimario_trans") == 0) {
             target_oi = o;
             break;
         }
     }
+    if (target_oi < 0 && objs.count > 1) target_oi = 1;
 
-    gm82_instance *inst = NULL;
-    if (target_oi >= 0) {
-        inst = gm82_runtime_instance_create(&rt, target_oi, 100, 200);
-    } else {
-        inst = &rt.instances[0];
-    }
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, target_oi, 100, 200);
 
     int pre_obj = inst->object_index;
     int pre_sprite = inst->sprite_index;
@@ -70,8 +60,9 @@ int main(int argc, char **argv) {
     double pre_y = inst->y;
     double pre_hspeed = inst->hspeed;
 
+    const char *pre_oname = (pre_obj >= 0 && pre_obj < objs.count) ? objs.items[pre_obj].name : "unknown";
     printf("BEFORE action apply: obj=%d (%s) sprite=%d x=%.2f y=%.2f hspeed=%.2f\n",
-           pre_obj, objs.items[pre_obj].name, pre_sprite, pre_x, pre_y, pre_hspeed);
+           pre_obj, pre_oname, pre_sprite, pre_x, pre_y, pre_hspeed);
 
     /* Fire object actions for instance */
     gm82_actions_fire_create(&rt, inst, &actions);
@@ -82,15 +73,16 @@ int main(int argc, char **argv) {
     double post_y = inst->y;
     double post_hspeed = inst->hspeed;
 
+    const char *post_oname = (post_obj >= 0 && post_obj < objs.count) ? objs.items[post_obj].name : "unknown";
     printf("AFTER action apply:  obj=%d (%s) sprite=%d x=%.2f y=%.2f hspeed=%.2f\n",
-           post_obj, objs.items[post_obj].name, post_sprite, post_x, post_y, post_hspeed);
+           post_obj, post_oname, post_sprite, post_x, post_y, post_hspeed);
 
     int state_changed = (post_obj != pre_obj || post_sprite != pre_sprite ||
-                         post_x != pre_x || post_y != pre_y || post_hspeed != pre_hspeed ||
-                         actions.count > 0);
+                         post_x != pre_x || post_y != pre_y || post_hspeed != pre_hspeed);
 
     if (state_changed) {
-        printf("DND_ACTION_APPLY_TEST_PASS: Extracted actions applied to instance state successfully\n");
+        printf("DND_ACTION_APPLY_TEST_PASS: Extracted actions applied and modified instance state (obj: %s -> %s, sprite: %d -> %d)\n",
+               pre_oname, post_oname, pre_sprite, post_sprite);
         return 0;
     } else {
         printf("DND_ACTION_APPLY_TEST_FAIL: Instance state did not change\n");
