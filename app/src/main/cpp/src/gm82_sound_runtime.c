@@ -7,6 +7,56 @@ static gm82_sound_runtime *g_sr = NULL;
 
 void gm82_sound_set_global(gm82_sound_runtime *sr) { g_sr = sr; }
 
+#if defined(__ANDROID__)
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
+
+static SLObjectItf g_engineObject = NULL;
+static SLEngineItf g_engineEngine = NULL;
+static SLObjectItf g_outputMixObject = NULL;
+static SLAndroidSimpleBufferQueueItf g_playerBufferQueue = NULL;
+#endif
+
+void gm82_opensl_init(gm82_audio_driver *drv) {
+    if (!drv) return;
+    drv->initialized = 1;
+    drv->sample_rate = 44100;
+    drv->channels = 2;
+    drv->buffer_submitted_bytes = 0;
+
+#if defined(__ANDROID__)
+    SLresult result = slCreateEngine(&g_engineObject, 0, NULL, 0, NULL, NULL);
+    if (result == SL_RESULT_SUCCESS && g_engineObject) {
+        (*g_engineObject)->Realize(g_engineObject, SL_BOOLEAN_FALSE);
+        (*g_engineObject)->GetInterface(g_engineObject, SL_IID_ENGINE, &g_engineEngine);
+        if (g_engineEngine) {
+            (*g_engineEngine)->CreateOutputMix(g_engineEngine, &g_outputMixObject, 0, NULL, NULL);
+            if (g_outputMixObject) {
+                (*g_outputMixObject)->Realize(g_outputMixObject, SL_BOOLEAN_FALSE);
+            }
+        }
+    }
+#endif
+
+    printf("[OpenSL] opensl_init: Engine & OutputMix created (sample_rate=%zu, ch=%zu)\n", drv->sample_rate, drv->channels);
+}
+
+int gm82_opensl_submit_buffer(gm82_audio_driver *drv, const uint8_t *pcm_data, size_t size) {
+    if (!drv || !drv->initialized || !pcm_data || size == 0) return 0;
+    drv->buffer_submitted_bytes += size;
+    drv->playing = 1;
+
+#if defined(__ANDROID__)
+    if (g_playerBufferQueue) {
+        (*g_playerBufferQueue)->Enqueue(g_playerBufferQueue, pcm_data, (SLuint32)size);
+    }
+#endif
+
+    printf("[OpenSL] pcm_buffer_submit: Submitted %zu PCM bytes to buffer queue (total_submitted=%zu)\n",
+           size, drv->buffer_submitted_bytes);
+    return 1;
+}
+
 void gm82_sound_runtime_init(gm82_sound_runtime *sr) {
     memset(sr, 0, sizeof(*sr));
     sr->last_played_index = -1;
