@@ -32,18 +32,6 @@ typedef struct {
 void gm82_sound_runtime_init(gm82_sound_runtime *sr);
 void gm82_sound_runtime_bind(gm82_sound_runtime *sr, const gm82_decoded_sound_list *sounds);
 
-/* OpenSL ES Audio Hardware Driver */
-typedef struct {
-    int initialized;
-    int playing;
-    size_t sample_rate;
-    size_t channels;
-    size_t buffer_submitted_bytes;
-} gm82_audio_driver;
-
-void gm82_opensl_init(gm82_audio_driver *drv);
-int gm82_opensl_submit_buffer(gm82_audio_driver *drv, const uint8_t *pcm_data, size_t size);
-
 /* Enqueue audio command for Android JNI / AudioTrack bridge */
 void gm82_enqueue_sound_command(int kind, int soundId, int loop, int prio, float volume);
 

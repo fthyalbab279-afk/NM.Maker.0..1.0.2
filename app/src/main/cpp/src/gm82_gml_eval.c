@@ -13,7 +13,7 @@ typedef struct {
     size_t i, n;
     gm82_runtime *rt;
     gm82_instance *self;
-    char err[64];
+    char err[128];
 } gml_parser;
 
 static void skip_ws(gml_parser *p) {
@@ -290,6 +290,17 @@ static bool parse_primary(gml_parser *p, double *out) {
             if (p->self) gml_draw_sprite((double)p->self->sprite_index, p->self->x, p->self->y);
             *out = 1; return true;
         }
+        if (p->rt && p->rt->scripts) {
+            int sidx = gm82_script_find(p->rt->scripts, id);
+            if (sidx >= 0) {
+                gm82_gml_set_script_args(args, nargs);
+                const char *code = p->rt->scripts->items[sidx].code;
+                if (code && code[0]) {
+                    *out = (double)gm82_gml_eval_block(p->rt, p->self, code);
+                    return true;
+                }
+            }
+        }
         if (strcmp(id, "gravedad") == 0) {
             /* user script in mario sample – apply simple gravity */
             if (p->self) { p->self->gravity = 0.4; p->self->gravity_direction = 270; }
@@ -390,6 +401,91 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     gm82_gml_set_self(self);
     char id[64];
     if (!parse_ident(&p, id, sizeof(id))) return false;
+    /* repeat (count) body */
+    if (strcmp(id, "repeat") == 0) {
+        double count_val = 0;
+        skip_ws(&p);
+        if (peek(&p) == '(') {
+            getc_(&p);
+            if (!parse_expr(&p, &count_val)) return false;
+            if (!match(&p, ')')) return false;
+        } else {
+            if (!parse_expr(&p, &count_val)) return false;
+        }
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        char body_buf[2048];
+        size_t k = 0;
+        if (*body == '{') {
+            int depth = 0; const char *q = body;
+            while (*q && k + 1 < sizeof(body_buf)) {
+                if (*q == '{') depth++;
+                else if (*q == '}') {
+                    depth--;
+                    if (depth == 0) { q++; break; }
+                }
+                body_buf[k++] = *q++;
+            }
+            body_buf[k] = 0;
+        } else {
+            while (body[k] && body[k] != ';' && body[k] != '\n' && k + 1 < sizeof(body_buf)) {
+                body_buf[k] = body[k]; k++;
+            }
+            body_buf[k] = 0;
+        }
+        int times = (int)count_val;
+        for (int t = 0; t < times; t++) {
+            if (body_buf[0] == '{') gm82_gml_eval_block(rt, self, body_buf);
+            else gm82_gml_eval_stmt(rt, self, body_buf);
+        }
+        return true;
+    }
+
+    /* with (target) body */
+    if (strcmp(id, "with") == 0) {
+        double target_val = 0;
+        skip_ws(&p);
+        if (peek(&p) == '(') {
+            getc_(&p);
+            if (!parse_expr(&p, &target_val)) return false;
+            if (!match(&p, ')')) return false;
+        } else {
+            if (!parse_expr(&p, &target_val)) return false;
+        }
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        char body_buf[2048];
+        size_t k = 0;
+        if (*body == '{') {
+            int depth = 0; const char *q = body;
+            while (*q && k + 1 < sizeof(body_buf)) {
+                if (*q == '{') depth++;
+                else if (*q == '}') {
+                    depth--;
+                    if (depth == 0) { q++; break; }
+                }
+                body_buf[k++] = *q++;
+            }
+            body_buf[k] = 0;
+        } else {
+            while (body[k] && body[k] != ';' && body[k] != '\n' && k + 1 < sizeof(body_buf)) {
+                body_buf[k] = body[k]; k++;
+            }
+            body_buf[k] = 0;
+        }
+        if (rt) {
+            int target_id = (int)target_val;
+            for (int i = 0; i < rt->instance_count; i++) {
+                gm82_instance *inst = &rt->instances[i];
+                if (inst->alive && (inst->id == target_id || inst->object_index == target_id || target_id == -1 /* all */)) {
+                    if (body_buf[0] == '{') gm82_gml_eval_block(rt, inst, body_buf);
+                    else gm82_gml_eval_stmt(rt, inst, body_buf);
+                }
+            }
+        }
+        return true;
+    }
+
     /* if (cond) body [else body] – supports single stmt or { block } */
     if (strcmp(id, "if") == 0) {
         double cond = 0;
@@ -462,31 +558,6 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
         if (else_buf[0]) {
             if (else_buf[0] == '{') return gm82_gml_eval_block(rt, self, else_buf) > 0;
             return gm82_gml_eval_stmt(rt, self, else_buf);
-        }
-        return true;
-    }
-
-    /* with (obj/id) body */
-    if (strcmp(id, "with") == 0) {
-        double target_expr = 0;
-        skip_ws(&p);
-        if (peek(&p) == '(') {
-            getc_(&p);
-            if (!parse_expr(&p, &target_expr)) return false;
-            if (!match(&p, ')')) return false;
-        } else {
-            if (!parse_expr(&p, &target_expr)) return false;
-        }
-        skip_ws(&p);
-        const char *body = p.s + p.i;
-        if (!rt) return true;
-        int target_oi = (int)target_expr;
-        for (int i = 0; i < rt->instance_count; i++) {
-            gm82_instance *inst = &rt->instances[i];
-            if (!inst->alive) continue;
-            if (target_oi >= 0 && inst->object_index != target_oi && inst->id != target_oi) continue;
-            if (*body == '{') gm82_gml_eval_block(rt, inst, body);
-            else gm82_gml_eval_stmt(rt, inst, body);
         }
         return true;
     }
