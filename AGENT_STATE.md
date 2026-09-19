@@ -1,13 +1,13 @@
 # AGENT_STATE.md — NOR_MAKER Plan B (ملزم لأي وكيل / Jules)
 
-plan_B_percent: 34
+plan_B_percent: 36
 is_100: false
 claim_100_percent_allowed: false
 
-current_task: dnd_action_args_mario
-last_result: none
-last_test_log: none
-last_run_date: none
+current_task: gml_scripts_from_gmk
+last_result: PASS
+last_test_log: Scanned 15 object action groups from NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/mario_bros.gmk; DND_EXTRACTION_TEST_PASS: Extracted 10 real actions with args
+last_run_date: 2026-09-15
 
 ## rules (لا تُكسر)
 - never claim 100%
