@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gm82_script.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <zlib.h>
@@ -59,27 +60,51 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
         size_t ol = 0;
         uint8_t *d = inflate_at(data + i, size - i, &ol);
         i += 16;
-        if (!d || ol < 40) { free(d); continue; }
-        if (rd_i32(d) != 1) { free(d); continue; }
+        if (!d || ol < 30) { free(d); continue; }
+        if (rd_i32(d) != 1 && rd_i32(d) != 800) { free(d); continue; }
         int32_t slen = rd_i32(d + 4);
-        if (slen < 3 || slen > 48 || 8+(size_t)slen+20 > ol) { free(d); continue; }
+        if (slen < 2 || slen > 48 || 8+(size_t)slen+8 > ol) { free(d); continue; }
         char name[64]; memcpy(name, d+8, (size_t)slen); name[slen]=0;
         int ok=1; for(int k=0;k<slen;k++) if(name[k]<32||name[k]>126) ok=0;
-        if (!ok || (strncmp(name,"scr",3)!=0 && strncmp(name,"script",6)!=0)) {
-            free(d); continue;
-        }
-        /* after name + lastChanged(8) + ver(4): script code string */
-        size_t off = 8+(size_t)slen+8+4;
-        char code[GM82_SCRIPT_CODE_MAX] = "";
-        if (off+4 <= ol) {
-            int32_t n = rd_i32(d + off); off += 4;
-            if (n > 0 && n < GM82_SCRIPT_CODE_MAX-1 && off+(size_t)n <= ol) {
-                memcpy(code, d+off, (size_t)n);
-                code[n] = 0;
+        if (!ok) { free(d); continue; }
+
+        /* Search for long GML-like string in this script resource blob */
+        const char *best_code = NULL;
+        int best_len = 0;
+        for (size_t j = 8 + (size_t)slen; j + 4 < ol; j++) {
+            int32_t n = rd_i32(d + j);
+            if (n >= 10 && n < GM82_SCRIPT_CODE_MAX - 1 && j + 4 + (size_t)n <= ol) {
+                const uint8_t *s = d + j + 4;
+                int printable = 1;
+                for (int k = 0; k < n; k++) {
+                    unsigned char c = s[k];
+                    if (!(c >= 32 && c < 127) && c != 9 && c != 10 && c != 13) { printable = 0; break; }
+                }
+                if (printable && n > best_len) {
+                    best_len = n;
+                    best_code = (const char *)s;
+                }
             }
         }
-        gm82_script_add(out, name, code);
+        if (best_code && best_len >= 10) {
+            char code[GM82_SCRIPT_CODE_MAX];
+            int ncopy = best_len < GM82_SCRIPT_CODE_MAX - 1 ? best_len : GM82_SCRIPT_CODE_MAX - 1;
+            memcpy(code, best_code, (size_t)ncopy);
+            code[ncopy] = 0;
+            gm82_script_add(out, name, code);
+        }
         free(d);
+    }
+
+    /* Fallback: if no standard script headers found, harvest GML fragments as scripts */
+    if (out->count == 0) {
+        gm82_gml_fragment_list frags;
+        gm82_harvest_gml_fragments_from_gmk(data, size, &frags);
+        for (int f = 0; f < frags.count && out->count < GM82_SCRIPT_MAX; f++) {
+            char sname[64];
+            snprintf(sname, sizeof(sname), "scr_gml_%d", f);
+            gm82_script_add(out, sname, frags.items[f].code);
+        }
     }
     return out->count;
 }
