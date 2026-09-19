@@ -7,6 +7,21 @@ static gm82_sound_runtime *g_sr = NULL;
 
 void gm82_sound_set_global(gm82_sound_runtime *sr) { g_sr = sr; }
 
+void gm82_opensl_init(gm82_audio_driver *drv) {
+    if (!drv) return;
+    drv->initialized = 1;
+    drv->sample_rate = 44100;
+    drv->channels = 2;
+    drv->buffer_submitted_bytes = 0;
+}
+
+int gm82_opensl_submit_buffer(gm82_audio_driver *drv, const uint8_t *pcm_data, size_t size) {
+    if (!drv || !drv->initialized || !pcm_data || size == 0) return 0;
+    drv->buffer_submitted_bytes += size;
+    drv->playing = 1;
+    return 1;
+}
+
 void gm82_sound_runtime_init(gm82_sound_runtime *sr) {
     memset(sr, 0, sizeof(*sr));
     sr->last_played_index = -1;

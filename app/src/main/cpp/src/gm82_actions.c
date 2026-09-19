@@ -210,7 +210,7 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
     if (strcmp(ar->name, "action_sprite_set") == 0) {
-        self->sprite_index = ar->action_id >= 0 ? ar->action_id : (ar->kind >= 0 ? ar->kind : 1);
+        self->sprite_index = ar->action_id >= 0 ? ar->action_id : (ar->kind >= 0 ? ar->kind : -1);
         return true;
     }
     if (strcmp(ar->name, "action_change_object") == 0) {
