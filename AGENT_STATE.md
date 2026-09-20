@@ -4,10 +4,10 @@ plan_B_percent: 36
 is_100: false
 claim_100_percent_allowed: false
 
-current_task: gml_scripts_from_gmk
+current_task: sound_host_playback
 last_result: PASS
-last_test_log: Scanned 15 object action groups from NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/mario_bros.gmk; DND_EXTRACTION_TEST_PASS: Extracted 10 real actions with args
-last_run_date: 2026-09-15
+last_test_log: Decoded 22 scripts from NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/mario_bros.gmk; MARIO_SCRIPTS_TEST_PASS: Script extraction and execution test finished successfully
+last_run_date: 2026-09-20
 
 ## rules (لا تُكسر)
 - never claim 100%
