@@ -29,6 +29,26 @@ static int32_t rd_i32(const uint8_t *p) {
     return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
 }
 
+static int is_audio_filename(const char *s, int len) {
+    if (len < 4) return 0;
+    const char *exts[] = { ".wav", ".mid", ".mp3", ".ogg", ".wma", ".aiff" };
+    for (int i = 0; i < 6; i++) {
+        int elen = (int)strlen(exts[i]);
+        if (len >= elen) {
+            const char *end = s + len - elen;
+            int match = 1;
+            for (int k = 0; k < elen; k++) {
+                char c1 = end[k];
+                char c2 = exts[i][k];
+                if (c1 >= 'A' && c1 <= 'Z') c1 = (char)(c1 - 'A' + 'a');
+                if (c1 != c2) { match = 0; break; }
+            }
+            if (match) return 1;
+        }
+    }
+    return 0;
+}
+
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol = 0;
     z_stream strm; memset(&strm, 0, sizeof(strm));
@@ -80,41 +100,13 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
                     unsigned char c = s[k];
                     if (!(c >= 32 && c < 127) && c != 9 && c != 10 && c != 13) { printable = 0; break; }
                 }
-                if (printable && n > best_len) {
+                if (printable && !is_audio_filename((const char *)s, n) && n > best_len) {
                     best_len = n;
                     best_code = (const char *)s;
                 }
             }
         }
-        if (best_code && best_len >= 10) {
-            int is_audio = 0;
-            if (best_len <= 64) {
-                int has_code_token = 0;
-                for (int k = 0; k < best_len; k++) {
-                    char c = best_code[k];
-                    if (c == '{' || c == '}' || c == ';' || c == '=' || c == ' ' || c == '\n' || c == '\r') {
-                        has_code_token = 1;
-                        break;
-                    }
-                }
-                if (!has_code_token && best_len >= 4) {
-                    const char *ext = best_code + best_len - 4;
-                    if (ext[0] == '.' &&
-                        ((ext[1]=='w'||ext[1]=='W') && (ext[2]=='a'||ext[2]=='A') && (ext[3]=='v'||ext[3]=='V') ||
-                         (ext[1]=='m'||ext[1]=='M') && (ext[2]=='i'||ext[2]=='I') && (ext[3]=='d'||ext[3]=='D') ||
-                         (ext[1]=='m'||ext[1]=='M') && (ext[2]=='p'||ext[2]=='P') && (ext[3]=='3'||ext[3]=='3') ||
-                         (ext[1]=='o'||ext[1]=='O') && (ext[2]=='g'||ext[2]=='G') && (ext[3]=='g'||ext[3]=='G'))) {
-                        is_audio = 1;
-                    }
-                }
-            }
-            if (!is_audio) {
-                char code[GM82_SCRIPT_CODE_MAX];
-                int ncopy = best_len < GM82_SCRIPT_CODE_MAX - 1 ? best_len : GM82_SCRIPT_CODE_MAX - 1;
-                memcpy(code, best_code, (size_t)ncopy);
-                code[ncopy] = 0;
-                gm82_script_add(out, name, code);
-            }
+main
         }
         free(d);
     }

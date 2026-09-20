@@ -4,10 +4,8 @@ plan_B_percent: 38
 is_100: false
 claim_100_percent_allowed: false
 
-current_task: sound_host_playback
-last_result: PASS
-last_test_log: SCRIPT_SCAN_TEST_SUITE_PASS: Total sample files passing script decode test = 4/4 (mario_bros: 22 scripts, plataformas: 17 scripts, zelda: 18 scripts, shooter: 10 scripts)
-last_run_date: 2026-09-15
+
+main
 
 ## rules (لا تُكسر)
 - never claim 100%
