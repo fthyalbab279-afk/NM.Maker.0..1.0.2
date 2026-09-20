@@ -29,6 +29,26 @@ static int32_t rd_i32(const uint8_t *p) {
     return (int32_t)(p[0]|p[1]<<8|p[2]<<16|p[3]<<24);
 }
 
+static int is_audio_filename(const char *s, int len) {
+    if (len < 4) return 0;
+    const char *exts[] = { ".wav", ".mid", ".mp3", ".ogg", ".wma", ".aiff" };
+    for (int i = 0; i < 6; i++) {
+        int elen = (int)strlen(exts[i]);
+        if (len >= elen) {
+            const char *end = s + len - elen;
+            int match = 1;
+            for (int k = 0; k < elen; k++) {
+                char c1 = end[k];
+                char c2 = exts[i][k];
+                if (c1 >= 'A' && c1 <= 'Z') c1 = (char)(c1 - 'A' + 'a');
+                if (c1 != c2) { match = 0; break; }
+            }
+            if (match) return 1;
+        }
+    }
+    return 0;
+}
+
 static uint8_t *inflate_at(const uint8_t *src, size_t n, size_t *ol) {
     *ol = 0;
     z_stream strm; memset(&strm, 0, sizeof(strm));
@@ -80,7 +100,7 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
                     unsigned char c = s[k];
                     if (!(c >= 32 && c < 127) && c != 9 && c != 10 && c != 13) { printable = 0; break; }
                 }
-                if (printable && n > best_len) {
+                if (printable && !is_audio_filename((const char *)s, n) && n > best_len) {
                     best_len = n;
                     best_code = (const char *)s;
                 }
