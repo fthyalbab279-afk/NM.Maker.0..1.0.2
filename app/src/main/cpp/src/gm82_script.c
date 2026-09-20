@@ -106,7 +106,22 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
                 }
             }
         }
-        if (best_code && best_len >= 10) {
+        /* Filter out audio file names like .wav, .mid, .mp3, .ogg, .wma */
+        int is_audio = 0;
+        if (best_code && best_len >= 4) {
+            const char *exts[] = { ".wav", ".mid", ".mp3", ".ogg", ".wma", ".midi", NULL };
+            for (int e = 0; exts[e]; e++) {
+                int elen = (int)strlen(exts[e]);
+                if (best_len >= elen) {
+                    if (strncasecmp(best_code + best_len - elen, exts[e], (size_t)elen) == 0) {
+                        is_audio = 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (best_code && best_len >= 10 && !is_audio) {
             char code[GM82_SCRIPT_CODE_MAX];
             int ncopy = best_len < GM82_SCRIPT_CODE_MAX - 1 ? best_len : GM82_SCRIPT_CODE_MAX - 1;
             memcpy(code, best_code, (size_t)ncopy);

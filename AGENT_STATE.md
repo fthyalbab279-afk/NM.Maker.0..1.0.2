@@ -1,13 +1,10 @@
 # AGENT_STATE.md — NOR_MAKER Plan B (ملزم لأي وكيل / Jules)
 
-plan_B_percent: 36
+plan_B_percent: 38
 is_100: false
 claim_100_percent_allowed: false
 
-current_task: sound_host_playback
-last_result: PASS
-last_test_log: Decoded 22 scripts from NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/mario_bros.gmk; MARIO_SCRIPTS_TEST_PASS: Script extraction and execution test finished successfully
-last_run_date: 2026-09-20
+ main
 
 ## rules (لا تُكسر)
 - never claim 100%
