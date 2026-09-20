@@ -1,12 +1,12 @@
 # AGENT_STATE.md — NOR_MAKER Plan B (ملزم لأي وكيل / Jules)
 
-plan_B_percent: 36
+plan_B_percent: 38
 is_100: false
 claim_100_percent_allowed: false
 
-current_task: gml_scripts_from_gmk
+current_task: sound_host_playback
 last_result: PASS
-last_test_log: Scanned 15 object action groups from NOR_MAKER_COMPLETE_PACKAGE/02_SAMPLES/mario_bros.gmk; DND_EXTRACTION_TEST_PASS: Extracted 10 real actions with args
+last_test_log: SCRIPT_SCAN_TEST_SUITE_PASS: Total sample files passing script decode test = 4/4 (mario_bros: 22 scripts, plataformas: 17 scripts, zelda: 18 scripts, shooter: 10 scripts)
 last_run_date: 2026-09-15
 
 ## rules (لا تُكسر)

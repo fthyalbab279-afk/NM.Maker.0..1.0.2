@@ -87,11 +87,34 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
             }
         }
         if (best_code && best_len >= 10) {
-            char code[GM82_SCRIPT_CODE_MAX];
-            int ncopy = best_len < GM82_SCRIPT_CODE_MAX - 1 ? best_len : GM82_SCRIPT_CODE_MAX - 1;
-            memcpy(code, best_code, (size_t)ncopy);
-            code[ncopy] = 0;
-            gm82_script_add(out, name, code);
+            int is_audio = 0;
+            if (best_len <= 64) {
+                int has_code_token = 0;
+                for (int k = 0; k < best_len; k++) {
+                    char c = best_code[k];
+                    if (c == '{' || c == '}' || c == ';' || c == '=' || c == ' ' || c == '\n' || c == '\r') {
+                        has_code_token = 1;
+                        break;
+                    }
+                }
+                if (!has_code_token && best_len >= 4) {
+                    const char *ext = best_code + best_len - 4;
+                    if (ext[0] == '.' &&
+                        ((ext[1]=='w'||ext[1]=='W') && (ext[2]=='a'||ext[2]=='A') && (ext[3]=='v'||ext[3]=='V') ||
+                         (ext[1]=='m'||ext[1]=='M') && (ext[2]=='i'||ext[2]=='I') && (ext[3]=='d'||ext[3]=='D') ||
+                         (ext[1]=='m'||ext[1]=='M') && (ext[2]=='p'||ext[2]=='P') && (ext[3]=='3'||ext[3]=='3') ||
+                         (ext[1]=='o'||ext[1]=='O') && (ext[2]=='g'||ext[2]=='G') && (ext[3]=='g'||ext[3]=='G'))) {
+                        is_audio = 1;
+                    }
+                }
+            }
+            if (!is_audio) {
+                char code[GM82_SCRIPT_CODE_MAX];
+                int ncopy = best_len < GM82_SCRIPT_CODE_MAX - 1 ? best_len : GM82_SCRIPT_CODE_MAX - 1;
+                memcpy(code, best_code, (size_t)ncopy);
+                code[ncopy] = 0;
+                gm82_script_add(out, name, code);
+            }
         }
         free(d);
     }
