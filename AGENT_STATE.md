@@ -4,7 +4,8 @@ plan_B_percent: 38
 is_100: false
 claim_100_percent_allowed: false
 
- main
+
+main
 
 ## rules (لا تُكسر)
 - never claim 100%
