@@ -1,32 +1,33 @@
-# NOR Maker – Honest Gaps and Implementation Matrix
+# NOR Maker – Realistic Gap Matrix vs Full Windows GM Engine
 
 Date: 2026-09-21
+Estimated GM8.2 Windows Parity: ~38% (HOST MVP Subset)
 
 ---
 
-## Verified Features (Host & Core Engine)
+## Verified Subsets (Host MVP Engine)
 
-| Feature | Status | Verification |
-|---------|--------|--------------|
-| GMK Header & Zlib Stream Parsing | PASS | All 4 sample games decode correctly |
-| Sprite & Background Materialization | PASS | Nonzero RGBA pixel buffers generated |
-| Objects & Room Instance Parsing | PASS | Rooms and instances extracted for Mario, Zelda, Shooter, Plataformas |
-| Room Name Patterns | PASS | Decodes room*, rm_*, r001, r_* patterns |
-| Runtime Engine Execution | PASS | Step/Draw cycles verified for 100+ simulation frames |
-| Physics & Solid AABB Collision | PASS | Ground collision and movement verified on Mario |
-| Sound Queue & OpenSL ES Bridge | PASS | Audio playback commands queued safely without crash |
-| GML Expression & AST Evaluation | PASS | Builtins, math functions, conditionals, and script calls supported |
-| Dual Loader (.gmk / .gm82) | PASS | Format auto-detection and guard validation passed |
-| Android JNI Interface | PASS | Native JNI bridge linked for host and Android build targets |
+| Component | Status | Verified Metric |
+|-----------|--------|-----------------|
+| GMK Stream Decoding | PASS | mario_bros (301 inst, 115 tiles), plataformas (270 inst), shooter (472 inst), zelda (372 inst) |
+| Soft CPU Frame Renderer | PASS | Soft PPM/RGBA rendering verified (>1000 nonzero pixels) |
+| Host Mario Simulation | PASS | 100-frame simulation, horizontal player movement (dx=144.0 > 20) |
+| Dual Loader (.gmk / .gm82) | PASS | Auto-detection and runtime guard verification passed |
+| JNI Native Hooks | PASS | JNI bridging structures compiled and linked |
 
 ---
 
-## Remaining Gaps / Future Target Features
+## Major Missing Features vs Full Windows GM Engine (>60% Missing)
 
-| Feature | Status | Description / Reason |
-|---------|--------|----------------------|
-| On-Device Hardware GLES Surface | BLOCKED / PENDING | Requires active Android device GLES context testing |
-| On-Device OpenSL ES Sound Output | BLOCKED / PENDING | Audio queued natively; physical speaker output requires hardware device test |
-| Full 100% GML Engine Parity | INCOMPLETE | Advanced GML edge cases and complex extension DLLs capped at MVP level |
+| Missing System | Impact | Reality / Status |
+|----------------|--------|------------------|
+| Physical Device GLES Hardware Surface | BLOCKED | No GPU/emulator attached via adb in sandbox |
+| Physical Device OpenSL ES Audio | BLOCKED | Direct audio speaker output unverified on device |
+| Complete GML VM & AST Interpreter | INCOMPLETE | Minimal expression evaluator; lacks full closure/variable scope parity |
+| Precise Mask Collisions | INCOMPLETE | Simple AABB bounding boxes only |
+| Surfaces, Shaders, Blend Modes | INCOMPLETE | Not implemented |
+| Full DnD Action Library | INCOMPLETE | Subset of actions implemented |
+| Paths, Timelines, Particles, MP Grid | INCOMPLETE | Partial / Skeleton implementations |
+| Networking, DLL extensions | INCOMPLETE | Not implemented |
 
-Note: Progress percentage is capped at 85% (release tag HOST_MVP) until full on-device hardware testing passes.
+Note: Progress is honestly capped at 38% compared to complete Windows GM8 runtime parity.
