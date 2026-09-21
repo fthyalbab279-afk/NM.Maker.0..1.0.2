@@ -1,58 +1,46 @@
-# NOR Maker – ما يوجد فعلاً vs ما ناقص (تحديث صادق ملزم)
+# NOR Maker – ما يوجد فعلاً vs ما ناقص (مقارنة صادقة مع ويندوز GM82)
 
 تاريخ التحديث: 2026-09-20
-النسبة الحالية: **85% (HOST_MVP)** — ليس 100%
+النسبة الحقيقية مقارنة بـ Windows GM82 الكامل: **~38% (أقل من 40%)**
 
 ---
 
-## ✅ موجود ومُختبر على المضيف (Host MVP) باختبارات مسجلة في الريبو
+## 📊 التقييم الصادق لمستوى التطابق مع ويندوز GM82
 
-| المكوّن | الدليل والاختبارات في الريبو |
-|---------|------------------------------|
-| فك GMK header + zlib | test_core_suite (4 عيّنات: mario_bros, plataformas, shooter, zelda) |
-| Materialize pixels (BGRA→RGBA) | test_runtime_guard & test_dual_load |
-| Background pixels | materialize_backgrounds |
-| Objects (اسم + sprite_index + solid) | test_phase2_smoke_4games (mario: 47 obj) |
-| Rooms + instances + tiles | test_phase2_smoke_4games |
-| أسماء غرف مرنة | room*, rm_*, r001, r_* في gm82_object_room_decode.c |
-| Runtime Create/Step/Draw | test_phase2_smoke_4games (4/4 PASS) |
-| Mario Player physics parity | test_mario_physics_parity (100 إطار, dx=96.0, MARIO_PLAYABLE_PASS_HOST) |
-| GML builtins + AST evaluation | test_phase3_gml PASS (x=, coins+=, if, repeat, with) |
-| DnD actions parsing + apply | test_dnd_args & test_dnd_action_apply PASS |
-| Alarms countdown + fire | alarms[0..11] |
-| Keyboard input state | test_phase4_input_sound |
-| View/camera follow | view_x/y follow target |
-| Sound decode + command queue | test_sound_playback & test_audio_device PASS |
-| Soft render → framebuffer | non-zero pixels > 1000 PASS |
-| Runtime Guard | test_runtime_guard PASS |
+| المجال | التغطية الحالية | الملاحظات |
+|--------|----------------|-----------|
+| **GMK File Parser** | ~60% | يفك الهيدر ومعظم الموارد الأساسية، لكن بعض الخصائص المتقدمة لم تفك بعد |
+| **GML Runtime / Interpreter** | ~35% | مفسر بسيط للتعابير والأوامر الأساسية؛ لا يوجد مفسر Bytecode كامل مثل ويندوز |
+| **DnD Actions Engine** | ~40% | دعم الأساسيات (الحركة، تغيير السبرايت، تغيير الكائن، المنبهات) |
+| **Physics & Collisions** | ~30% | اصطدام مربع AABB + منصات البلاط؛ لا يوجد Precise per-pixel collision mask |
+| **Graphics & Rendering** | ~35% | Software Renderer على المضيف + هيكل GLES مبدئي؛ لا توجد الشادارات والـ Surfaces المتقدمة |
+| **Audio Engine** | ~25% | طابور الأوامر وفك الصوت متوفر على Host؛ تشغيل العتاد المباشر لم ينتهي بعد |
+| **النسبة الكلية** | **~38%** | **أقل من 40% مقارنة بنواة ويندوز GM82 الكاملة** |
 
 ---
 
-## ❌ غير موجود / متبقي للجهاز (REMAINING)
+## ✅ ما تم إنجازه واختباره على المضيف (Host Prototype)
 
-| المكوّن | الوضع الحالي |
-|---------|---------------|
-| GLES Hardware Texture Upload & Draw على جهاز أندرويد | BLOCKED (لا يوجد emulator أو أندرويد متصل في البيئة) |
-| OpenSL ES Hardware Audio Playback على جهاز أندرويد | BLOCKED (طابور الأوامر جاهز على Host، الجهاز غير متصل) |
-| Per-pixel precise mask collision | المتاح AABB + Tile BBox platforms |
-| Full GM82 Bytecode Compiler | المتاح GML AST Evaluator للعديد من التعابير والأوامر |
-| Particles / mp_grid / ds_* | stubs ومكتبات جزئية فقط |
-| Networking | غير موجود |
-
----
-
-## ⚠️ جزئي / محدود
-
-| المكوّن | القيد |
-|---------|--------|
-| Dual loader .gm82 | يكتشف الملف النصي؛ الفك الكامل جزئي |
-| Parent objects / inheritance | غير مدعوم بالكامل |
-| Persistent instances عبر الغرف | جزئي |
+1. فك ملفات GMK وإعادة بناء الموارد في الذاكرة (`mario_bros`, `plataformas`, `shooter`, `zelda`).
+2. Soft rendering وإظهار أول إطار بدون شاشة سوداء (`nonzero_pixels > 1000`).
+3. تجربة 4 ألعاب بـ 10 خطوات بدون انهيار (Smoke 4/4 PASS).
+4. محاكاة حركة ماريو 100 إطار مع الجاذبية والمنصات وتتبع الكاميرا (`MARIO_PLAYABLE_PASS_HOST`).
+5. تقييم عبارات GML الأساسية (`x=`, `coins+=`, `if`, `repeat`, `with`).
+6. فك أفعال DnD الشائعة وتطبيقها على الكائنات.
+7. طابور تشغيل الصوت البرمجي والربط بـ JNI.
 
 ---
 
-## التسمية الصريحة
+## ❌ المتبقي الكبير للوصول لتطابق ويندوز (REMAINING > 60%)
 
-- **المهمة الحالية:** `DEVICE_GLES_ONE_FRAME`
-- **النتيجة:** `DEVICE_GLES_BLOCKED` (عدم توفر emulator / جهاز أندرويد في البيئة)
-- **النسبة:** `85%` (HOST_MVP)
+1. **Full GML Bytecode VM:** دعم كافة دوال ومكاتب GML وشجرات التنفيذ المعقدة.
+2. **Precise Collision Masking:** اصطدام البكسل بدقة لكل سبرايت بدلاً من AABB.
+3. **GLES Hardware Pipeline:** رفع التكستشرات وإطارات الرسم للـ GPU على أندرويد.
+4. **OpenSL ES Audio Backend:** تشغيل الصوت الحقيقي المباشر على الجهاز.
+5. **Advanced GM82 Features:** Particles, mp_grid, ds_lists, ds_maps, Surfaces, Blend modes, Paths, Timelines الكاملة.
+
+---
+
+## التعهد بالشفافية
+
+عدم ادعاء "100%" أو "Complete Engine". النسبة الحالية هي **38%** حقيقية مع العمل التدريجي لتوسيع النواة.
