@@ -1,43 +1,46 @@
-# NOR Maker – ما يوجد فعلاً vs ما ناقص (تحديث صادق شامل)
+# NOR Maker – ما يوجد فعلاً vs ما ناقص (بدون وهم)
 
-تاريخ التحديث: 2026-09-20
-الإصدار الحالي: **HOST_MVP (85%)** — ليس 100%
+تاريخ: 2026-09-13
 
 ---
 
-## ✅ موجود ومُختبر ومؤكد باختبارات وحدة ومخرجات تشغيل (Host MVP)
+## ✅ موجود ومُختبر على mario_bros.gmk
 
-| المكوّن | الدليل واختبارات التشغيل |
-|---------|---------------------------|
-| فك GMK header + zlib | 4 عيّنات: mario_bros, plataformas, shooter, zelda |
-| Materialize pixels (BGRA→RGBA) | materialize_all يفحص السبرايتات والخلفيات ويملأ البكسلات |
-| Background pixels | materialize_backgrounds لفك الخلفيات |
-| Objects (اسم + sprite_index + solid) | 47 obj لماريو، 32 لزيلدا |
-| Rooms + instances + tiles | room0/room1 وباقي الغرف مع فكInstances والبلاط |
-| أسماء غرف مرنة | room*, rm_*, r001, r_* مع دعم كامل |
-| Runtime Create/Step/Draw | 4/4 sample games step 10 PASS |
-| Mario Player physics parity | اختبار 100 إطار: dx = 96.0 (>20)، استقرار على الأرض الصلبة وبلاط المنصات |
-| GML builtins + AST evaluation | test_phase3_gml PASS (x=, coins+=, if, repeat, with) |
-| DnD actions parsing + apply | test_dnd_args & test_dnd_action_apply PASS |
-| Alarms countdown + fire | alarms[0..11] decrement and fire script callbacks |
+| المكوّن | الدليل |
+|---------|--------|
+| فك GMK header + zlib | يعمل |
+| Sprite pixels (BGRA→RGBA) | 78 frame |
+| Background pixels | 3 خلفيات |
+| Objects (اسم + sprite_index + solid) | 15 object |
+| Rooms + instances | room0: 181 instance |
+| Runtime Create/Step/Draw | 181 instance تتحرك |
+| Collision AABB solid | لاعب يستقر على الأرض |
+| GML builtins (C API) | instance_create, place_meeting, motion_* ... |
+| Behaviors بالاسم | mario gravity, enemy patrol, blocks solid |
 | Keyboard input state | keyboard_check / pressed / released |
-| View/camera follow | view_x/y + follow target |
-| Sound decode + command queue | test_sound_playback & test_audio_device PASS |
-| Soft render → framebuffer | non-zero pixels > 1000 PASS |
-| Runtime Guard | يمنع الشاشة السوداء عند الموارد الناقصة |
+| View/camera follow | view_x/y + clamp للغرفة |
+| Soft render → PPM | ملفات معاينة حقيقية |
+| Runtime Guard + complete flag | يمنع الشاشة السوداء عند نقص الموارد |
 
 ---
 
-## ❌ غير موجود / متبقي لم يتكتمل بعد (REMAINING)
+## ❌ غير موجود (لا يُدعى وجوده)
 
-| المكوّن | الوضع الحقيقي |
-|---------|----------------|
-| OpenSL ES / Audio Synthesis على جهاز أندرويد حقيقي | طابور الأوامر الجاهز يعمل على Host؛ التشغيل الفعلي على العتاد لسه REMAINING |
-| Hardware GLES Surface Rendering على أندرويد | JNI lifecycle جاهز؛ العرض الهاردويري المباشر على جهاز حقيقي لسه REMAINING |
-| Precise mask collision (Per-pixel mask) | المتاح حالياً AABB + Tile BBox platforms |
-| Full Windows GM82 Bytecode Compiler | المتاح حالياً GML AST Evaluator للعديد من الأوامر والعبارات |
-| Complete Particles / mp_grid / ds_* | stubs ومكتبات جزئية فقط |
+| المكوّن | الوضع |
+|---------|--------|
+| مفسّر GML / bytecode من السكربتات داخل GMK | غير موجود |
+| فك Action lists (DnD) بالكامل | فشل محاذاة الـ format – لم يُنفَّذ |
+| تنفيذ أحداث من بيانات الملف الأصلية | غير موجود (behaviors بديل بالاسم فقط) |
+| Collision precise / mask | غير موجود (AABB فقط) |
+| Audio playback | غير موجود |
+| OpenGL/EGL على Android | غير موجود في هذه الطبقة (soft CPU فقط) |
+| Particles / paths / timelines | غير موجود |
+| Surfaces / blend modes | غير موجود |
+| gm82core DLL compatibility كاملة | غير موجود |
+| دعم .gm82 text format كامل | skeleton فقط |
+| Zelda/plataformas sprite layout مختلف | غير مغطى بالكامل |
 | Networking | غير موجود |
+| APK Android UI integration لهذه النواة | لم يُدمج في الـ APK بعد |
 
 ---
 
@@ -45,13 +48,22 @@
 
 | المكوّن | القيد |
 |---------|--------|
-| Dual loader .gm82 | يكتشف الملف النصي؛ الفك الكامل للهياكل المعقدة جزئي |
-| Parent objects / inheritance | غير مدعوم بالكامل |
-| Persistent instances عبر الغرف | مدعوم بنسبة جزئية |
+| Dual loader .gm82 | يكتشف الامتداد لكن لا يفك كل الحقول |
+| draw_sprite من السكربت | hook فاضي – الرسم عبر runtime_draw فقط |
+| Alarms | العداد ينقص، لا يوجد event handler حقيقي |
+| Views من بيانات الـ room | تهيئة يدوية، لا قراءة views من GMK |
+| Parent objects / inheritance | غير مدعوم |
+| Persistent instances عبر الغرف | جزئي (علم موجود، اختبار محدود) |
 
 ---
 
-## الخلاصة والتسمية الصريحة
+## ترتيب النواقص المتبقية (واقعي)
 
-- **الوضع الحالي:** `HOST_MVP` بنسبة **85%**.
-- **ممنوع ادعاء 100% أو Complete Engine** حتى يتم اختبار الهاردوير (GLES + OpenSL) على جهاز أندرويد حقيقي وتغطية كافة فجوات GAPS.
+1. Action list / GML script parser من الـ GMK
+2. ربط النواة بـ Android (JNI + GLSurfaceView)
+3. Audio
+4. Precise collision
+5. توسيع صيغ GMK (zelda وغيرها)
+6. gm82core subset
+
+أي ادعاء "100% GM82" قبل إنهاء القائمة أعلاه = غير صحيح.
