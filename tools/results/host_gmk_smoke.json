@@ -1,0 +1,42 @@
+{
+  "mario_bros": {
+    "sprites": 47,
+    "backgrounds": 24,
+    "objects": 15,
+    "instances": 301,
+    "tiles": 115,
+    "rooms": 2,
+    "step_draw_verified": true,
+    "nonzero_pixels": 312000
+  },
+  "plataformas": {
+    "sprites": 42,
+    "backgrounds": 6,
+    "objects": 7,
+    "instances": 270,
+    "tiles": 0,
+    "rooms": 4,
+    "step_draw_verified": true,
+    "nonzero_pixels": 307200
+  },
+  "shooter": {
+    "sprites": 14,
+    "backgrounds": 1,
+    "objects": 1,
+    "instances": 472,
+    "tiles": 1,
+    "rooms": 2,
+    "step_draw_verified": true,
+    "nonzero_pixels": 800000
+  },
+  "zelda": {
+    "sprites": 49,
+    "backgrounds": 13,
+    "objects": 7,
+    "instances": 372,
+    "tiles": 10,
+    "rooms": 3,
+    "step_draw_verified": true,
+    "nonzero_pixels": 38400
+  }
+}
