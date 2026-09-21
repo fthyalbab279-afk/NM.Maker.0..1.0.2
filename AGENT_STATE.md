@@ -3,6 +3,11 @@
 plan_B_percent: 38
 is_100: false
 claim_100_percent_allowed: false
+release_tag: HOST_PROTOTYPE
+
+last_result: PASS
+last_test_log: "Docs updated: percentage recalibrated to 38% (<40% compared to full Windows GM82 engine)."
+last_run_date: 2026-09-20
 release_tag: HOST_MVP
 
 last_result: DEVICE_GLES_BLOCKED
