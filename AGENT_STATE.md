@@ -7,7 +7,7 @@ release_tag: HOST_MVP
 
 last_result: PASS
 last_test_log: "Phase 0-8 complete. Mario 100-frame simulation MARIO_PLAYABLE_PASS_HOST. Smoke 4/4 PASS."
-last_run_date: 2026-09-20
+last_run_date: 2026-09-21
 
 ## rules (لا تُكسر)
 - never claim 100%
