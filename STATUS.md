@@ -1,18 +1,15 @@
 # NOR Maker Progress Status
 
-PROGRESS: 85% (HOST_MVP)
+PROGRESS: 38% (HOST_MVP, < 40% vs Full Windows GM Runtime Parity)
 RELEASE_TAG: HOST_MVP
 CLAIM_100_PERCENT_ALLOWED: false
 
-## Phase Status
-- Phase 0: Base Engine Setup & Symbol Conflict Resolution (PASS)
-- Phase 1: Blackscreen Fix & Soft Rendering (PASS)
-- Phase 2: Room & Instance Decoding / 4-Game Smoke (4/4 PASS)
-- Phase 3: Mario Physics & Ground Parity (MARIO_PLAYABLE_PASS_HOST)
-- Phase 4: Sound Extraction & Playback Queue (PASS)
-- Phase 5: GML Builtins & AST Evaluation (PASS)
-- Phase 6: Dual Loader & Format Robustness (PASS)
-- Phase 7: Android JNI Bridge (PASS)
-- Phase 8: Multi-Game Smoke Verification (4/4 PASS)
+## Verified Host Metrics
+- mario_bros: spr=47, bg=24, obj=15, inst=301, tiles=115, step_draw_verified=true
+- plataformas: spr=42, bg=6, obj=7, inst=270, tiles=0, step_draw_verified=true
+- shooter: spr=14, bg=1, obj=1, inst=472, tiles=1, step_draw_verified=true
+- zelda: spr=49, bg=13, obj=7, inst=372, tiles=10, step_draw_verified=true
+- mario_physics: dx=144.00, nonzero_pixels=312000, MARIO_PLAYABLE_PASS_HOST
 
-REMAINING: Physical Android hardware device GLES surface and OpenSL ES audio verification.
+## Current Task Status
+- TASK DEVICE_GLES_ONE_FRAME: BLOCKED (No attached Android hardware device or AVD emulator in headless sandbox environment)
