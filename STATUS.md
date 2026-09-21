@@ -19,7 +19,8 @@ REMAINING: Physical Android hardware device GLES surface and OpenSL ES audio ver
 # تقدم مشروع NOR Maker / GM82
 
 تاريخ التحديث: 2026-09-20
-الحالة العامة: **HOST_MVP (85%)** — ليس 100%
+الحالة العامة: **85% (HOST_MVP)**
+المهمة الحالية: `DEVICE_GLES_ONE_FRAME`
 
 ## ✅ مراحل PASS على Host (0 إلى 8)
 - **Phase 0:** تجميع نظيف للنواة وحل تعارض الرموز (`gcc -D_GNU_SOURCE`).
@@ -32,7 +33,6 @@ REMAINING: Physical Android hardware device GLES surface and OpenSL ES audio ver
 - **Phase 7:** ربط JNI وقالب GLES.
 - **Phase 8:** اختبار Smoke موسع وتحديث الشفافية في `GAPS_HONEST.md`.
 
-## ❌ المتبقي للأندرويد على الجهاز (REMAINING)
-- تشغيل الصوت الفعلي عبر OpenSL ES / AudioTrack على عتاد الجهاز.
-- عرض الإطارات عبر GLES Hardware Surface على جهاز أندرويد حقيقي.
-- Precise mask collision وتوسيع مكتبات GML النادرة.
+## ❌ المتبقي للجهاز (REMAINING)
+- **DEVICE_GLES_ONE_FRAME:** BLOCKED بسبب عدم وجود Android Emulator أو جهاز أندرويد متصل في البيئة (`adb devices` فارغ).
+- **DEVICE_AUDIO_OPENSL:** تشغيل الصوت العتادي الفعلي على جهاز أندرويد.
