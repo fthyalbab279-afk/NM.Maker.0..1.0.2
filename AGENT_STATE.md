@@ -1,4 +1,4 @@
-# AGENT_STATE.md — NOR_MAKER Plan B (ملزم لأي وكيل / Jules)
+# AGENT_STATE.md — NOR_MAKER Real Progress Tracker
 
 plan_B_percent: 38
 is_100: false
@@ -8,22 +8,31 @@ release_tag: HOST_PROTOTYPE
 last_result: PASS
 last_test_log: "Docs updated: percentage recalibrated to 38% (<40% compared to full Windows GM82 engine)."
 last_run_date: 2026-09-20
+release_tag: HOST_MVP
+
+last_result: DEVICE_GLES_BLOCKED
+last_test_log: "No attached Android hardware device or running AVD emulator found via adb devices in sandbox container."
+last_run_date: 2026-09-21
+current_task: DEVICE_GLES_ONE_FRAME
+NEXT: DEVICE_GLES_ONE_FRAME
 
 ## rules (لا تُكسر)
 - never claim 100%
-- never say: complete engine, full GML VM done, production-ready, finished Plan B
-- never rewrite overall architecture
+- never claim full engine / Windows GM parity (current realistic parity < 40%)
+- never say: complete engine, full GML VM done, production-ready
 - authority: GAPS_HONEST.md + this file > README > PR titles
 
-## progress reality
-Relative to complete Windows GameMaker 8.2 parity, the native engine progress is estimated at ~38% (<40%).
-Basic loading, soft rendering, simple AST GML evaluation, and basic AABB collision work on host, but hardware GLES, OpenSL ES audio, complete GML VM, per-pixel collisions, particles, and full IDE parity are incomplete.
+## status summary
+- Base Host MVP & 4-Game Smoke Decoding (mario_bros, plataformas, shooter, zelda): PASS
+- Mario Physics Parity Host Test (MARIO_PLAYABLE_PASS_HOST): PASS
+- Full Windows GM8.1/8.2 Runtime Parity: < 40% (subset implementation)
+- Task DEVICE_GLES_ONE_FRAME: BLOCKED (No attached Android hardware device or AVD emulator in headless sandbox environment)
 
 ## required_reply_format
-PROGRESS: 38% (<40% compared to full Windows GM82)
-DONE: Updated progress baseline to 38% across AGENT_STATE.md, GAPS_HONEST.md, and STATUS.md.
-TEST: Native C unit tests passing on host.
-RESULT: PASS
-REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM, precise collisions, Android device testing.
-NEXT: Continue native engine GLES texture pipeline development.
+PROGRESS: 38% (HOST_MVP, < 40% vs Full Windows GM Engine)
+DONE: Host MVP sample game decoding (mario_bros, plataformas, shooter, zelda) and 100-frame Mario simulation host test.
+TEST: adb devices -> no attached physical Android device or emulator running in headless sandbox
+RESULT: DEVICE_GLES_BLOCKED
+REMAINING: Physical device GLES context, OpenSL ES audio output, and >60% missing Windows GM engine features.
+NEXT: DEVICE_GLES_ONE_FRAME
 CLAIM_100: no

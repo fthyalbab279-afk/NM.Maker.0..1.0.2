@@ -1,4 +1,4 @@
-# تقدم مشروع NOR Maker / GM82
+# تقدم
 
 تاريخ التحديث: 2026-09-20
 النسبة الفعلية مقارنة بـ Windows GM82 الكامل: **~38% (أقل من 40%)**
@@ -13,3 +13,8 @@
 - عرض الهاردوير عبر GLES وتكستشرات الـ GPU على أندرويد.
 - التشغيل العتادي المباشر للصوت عبر OpenSL ES.
 - الأنظمة المتقدمة (Particles, Data Structures, Surfaces, Networking).
+## ALPHA_OK
+- draw_set_alpha / get_alpha
+- put_px blends with destination
+
+## ~81%
