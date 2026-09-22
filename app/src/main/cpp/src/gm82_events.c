@@ -1,6 +1,4 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+#define _POSIX_C_SOURCE 200809L
 #include "gm82_events.h"
 #include "gm82_gml_builtins.h"
 #include "gm82_input.h"
