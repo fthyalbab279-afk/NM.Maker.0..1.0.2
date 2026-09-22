@@ -1,4 +1,5 @@
 #include "gml_vm.h"
+#include "gml_frontend.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -103,11 +104,33 @@ static void test_ast_math_exec(void) {
     puts("test_ast_math_exec PASS");
 }
 
+static void test_frontend_parse_exec(void) {
+    gml_ast *ast = NULL;
+    char err[160] = {0};
+    const char *src = "x = 10; y = 20; return x + y;";
+    int parse_ok = gml_parse_program(src, &ast, err, sizeof(err));
+    assert(parse_ok);
+    assert(ast != NULL);
+
+    gml_vm vm;
+    gml_vm_init(&vm);
+    int exec_ok = gml_vm_execute(&vm, ast);
+    assert(exec_ok);
+    assert(vm.returned);
+    assert(vm.return_value.kind == GML_V_REAL);
+    assert(vm.return_value.real == 30.0);
+
+    gml_value_free(&vm.return_value);
+    gml_ast_free(ast);
+    puts("test_frontend_parse_exec PASS");
+}
+
 int main(void) {
     puts("--- Running GML VM Unit Suite ---");
     test_vm_values();
     test_vm_scopes();
     test_ast_math_exec();
+    test_frontend_parse_exec();
     puts("--- GML VM Unit Suite PASS ---");
     return 0;
 }
