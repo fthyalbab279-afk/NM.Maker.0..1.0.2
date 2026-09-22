@@ -264,6 +264,10 @@ void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
 /* ---- Built-in variable access on self ---- */
 double gml_get_x(void);
 double gml_get_y(void);
+double gml_get_bbox_left(void);
+double gml_get_bbox_right(void);
+double gml_get_bbox_top(void);
+double gml_get_bbox_bottom(void);
 void   gml_set_x(double v);
 void   gml_set_y(double v);
 double gml_get_hspeed(void);

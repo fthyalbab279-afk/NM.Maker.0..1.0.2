@@ -221,6 +221,22 @@ void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
 double gml_get_y(void) { return g_self ? g_self->y : 0; }
+double gml_get_bbox_left(void) { return g_self ? g_self->x : 0; }
+double gml_get_bbox_right(void) {
+    if (!g_self) return 0;
+    int32_t sw = 16;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        sw = g_rt->sprites->frames[g_self->sprite_index].width;
+    return g_self->x + sw - 1;
+}
+double gml_get_bbox_top(void) { return g_self ? g_self->y : 0; }
+double gml_get_bbox_bottom(void) {
+    if (!g_self) return 0;
+    int32_t sh = 16;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        sh = g_rt->sprites->frames[g_self->sprite_index].height;
+    return g_self->y + sh - 1;
+}
 void gml_set_x(double v) { if (g_self) g_self->x = v; }
 void gml_set_y(double v) { if (g_self) g_self->y = v; }
 double gml_get_hspeed(void) { return g_self ? g_self->hspeed : 0; }
