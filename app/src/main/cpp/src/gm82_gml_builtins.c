@@ -23,6 +23,7 @@ static double g_draw_alpha = 1.0;
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -394,6 +395,27 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
     return -4;
 }
 
+double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme) {
+    (void)prec;
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)obj;
+    double rad_sq = rad * rad;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        double cx = o->x + ow / 2.0;
+        double cy = o->y + oh / 2.0;
+        double dx = cx - xc, dy = cy - yc;
+        if (dx * dx + dy * dy <= rad_sq)
+            return (double)o->id;
+    }
+    return -4;
+}
+
 double gml_collision_point(double x, double y, double obj, double prec, double notme) {
     return gml_collision_rectangle(x, y, x+1, y+1, obj, prec, notme);
 }
@@ -601,6 +623,52 @@ double gml_string_char_at(const char *str, double index) {
     int len = (int)strlen(str);
     if (idx < 0 || idx >= len) return 0;
     return (double)(unsigned char)str[idx];
+}
+
+double gml_string_digits(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        if (isdigit((unsigned char)str[i])) out[k++] = str[i];
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_string_lower(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        out[k++] = (char)tolower((unsigned char)str[i]);
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_string_upper(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        out[k++] = (char)toupper((unsigned char)str[i]);
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_array_length_1d(double array_id) {
+    (void)array_id;
+    return 1.0;
+}
+
+double gml_array_height_2d(double array_id) {
+    (void)array_id;
+    return 1.0;
 }
 
 
