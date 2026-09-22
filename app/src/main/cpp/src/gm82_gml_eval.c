@@ -75,6 +75,10 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     }
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "bbox_left") == 0) { *out = gml_get_bbox_left(); return true; }
+    if (strcmp(name, "bbox_right") == 0) { *out = gml_get_bbox_right(); return true; }
+    if (strcmp(name, "bbox_top") == 0) { *out = gml_get_bbox_top(); return true; }
+    if (strcmp(name, "bbox_bottom") == 0) { *out = gml_get_bbox_bottom(); return true; }
     if (strcmp(name, "hspeed") == 0) { *out = s ? s->hspeed : 0; return true; }
     if (strcmp(name, "vspeed") == 0) { *out = s ? s->vspeed : 0; return true; }
     if (strcmp(name, "speed") == 0) { *out = s ? s->speed : 0; return true; }
