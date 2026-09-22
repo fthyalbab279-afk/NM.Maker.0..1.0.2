@@ -84,6 +84,32 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1; return true; }
     if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1; return true; }
     if (strcmp(name, "sprite_index") == 0) { *out = s ? (double)s->sprite_index : 0; return true; }
+    if (strcmp(name, "bbox_left") == 0) { *out = s ? s->x : 0; return true; }
+    if (strcmp(name, "bbox_right") == 0) {
+        int sw = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sw = p->rt->sprites->frames[s->sprite_index].width;
+        *out = s ? s->x + sw : 0; return true;
+    }
+    if (strcmp(name, "bbox_top") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "bbox_bottom") == 0) {
+        int sh = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sh = p->rt->sprites->frames[s->sprite_index].height;
+        *out = s ? s->y + sh : 0; return true;
+    }
+    if (strcmp(name, "sprite_width") == 0) {
+        int sw = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sw = p->rt->sprites->frames[s->sprite_index].width;
+        *out = (double)sw; return true;
+    }
+    if (strcmp(name, "sprite_height") == 0) {
+        int sh = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sh = p->rt->sprites->frames[s->sprite_index].height;
+        *out = (double)sh; return true;
+    }
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
