@@ -99,6 +99,24 @@ void test_eval_control_flow(void) {
     printf("  Control Flow Eval PASS\n");
 }
 
+void test_view_variables(void) {
+    gm82_runtime rt;
+    gm82_runtime_init(&rt);
+    gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 0, 0);
+
+    gm82_gml_eval_block(&rt, inst, "view_xview = 120; view_yview = 80;");
+    assert(rt.view_x == 120.0);
+    assert(rt.view_y == 80.0);
+
+    double vx = 0, vy = 0;
+    gm82_gml_eval_expr(&rt, inst, "view_xview", &vx);
+    gm82_gml_eval_expr(&rt, inst, "view_yview", &vy);
+    assert(vx == 120.0);
+    assert(vy == 80.0);
+
+    printf("  View Variables Eval PASS\n");
+}
+
 int main(void) {
     printf("--- Running GML Comprehensive Test Suite ---\n");
     test_math_builtins();
@@ -106,6 +124,7 @@ int main(void) {
     test_string_builtins();
     test_ini_and_file_io();
     test_eval_control_flow();
+    test_view_variables();
     printf("--- GML Comprehensive Tests Passed! ---\n");
     return 0;
 }
