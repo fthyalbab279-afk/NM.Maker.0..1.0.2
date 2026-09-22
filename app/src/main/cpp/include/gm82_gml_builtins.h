@@ -239,6 +239,8 @@ int  gm82_debug_log_count(void);
 const char *gm82_debug_log_get(int index);
 double gml_string_length(const char *s);
 double gml_real(const char *s);
+double gml_string_pos(const char *sub, const char *str);
+double gml_string_char_at(const char *str, double index);
 double gml_mouse_x(void);
 double gml_mouse_y(void);
 double gml_mouse_check_button(double button);

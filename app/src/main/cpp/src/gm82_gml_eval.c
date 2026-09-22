@@ -88,6 +88,32 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1; return true; }
     if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1; return true; }
     if (strcmp(name, "sprite_index") == 0) { *out = s ? (double)s->sprite_index : 0; return true; }
+    if (strcmp(name, "bbox_left") == 0) { *out = s ? s->x : 0; return true; }
+    if (strcmp(name, "bbox_right") == 0) {
+        int sw = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sw = p->rt->sprites->frames[s->sprite_index].width;
+        *out = s ? s->x + sw : 0; return true;
+    }
+    if (strcmp(name, "bbox_top") == 0) { *out = s ? s->y : 0; return true; }
+    if (strcmp(name, "bbox_bottom") == 0) {
+        int sh = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sh = p->rt->sprites->frames[s->sprite_index].height;
+        *out = s ? s->y + sh : 0; return true;
+    }
+    if (strcmp(name, "sprite_width") == 0) {
+        int sw = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sw = p->rt->sprites->frames[s->sprite_index].width;
+        *out = (double)sw; return true;
+    }
+    if (strcmp(name, "sprite_height") == 0) {
+        int sh = 16;
+        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
+            sh = p->rt->sprites->frames[s->sprite_index].height;
+        *out = (double)sh; return true;
+    }
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
@@ -405,6 +431,103 @@ bool gm82_gml_eval_stmt(gm82_runtime *rt, gm82_instance *self, const char *stmt)
     gm82_gml_set_self(self);
     char id[64];
     if (!parse_ident(&p, id, sizeof(id))) return false;
+    /* while (cond) body */
+    if (strcmp(id, "while") == 0) {
+        skip_ws(&p);
+        const char *cond_start = p.s + p.i;
+        double cond_val = 0;
+        if (peek(&p) == '(') {
+            getc_(&p);
+            cond_start = p.s + p.i;
+            if (!parse_expr(&p, &cond_val)) return false;
+            size_t cond_len = (size_t)(p.s + p.i - cond_start);
+            char cond_buf[256];
+            if (cond_len >= sizeof(cond_buf)) cond_len = sizeof(cond_buf) - 1;
+            strncpy(cond_buf, cond_start, cond_len);
+            cond_buf[cond_len] = 0;
+            if (!match(&p, ')')) return false;
+            skip_ws(&p);
+            const char *body = p.s + p.i;
+            char body_buf[2048];
+            size_t k = 0;
+            if (*body == '{') {
+                int depth = 0; const char *q = body;
+                while (*q && k + 1 < sizeof(body_buf)) {
+                    if (*q == '{') depth++;
+                    else if (*q == '}') { depth--; if (depth == 0) { q++; break; } }
+                    body_buf[k++] = *q++;
+                }
+                body_buf[k] = 0;
+            } else {
+                while (body[k] && body[k] != ';' && body[k] != '\n' && k + 1 < sizeof(body_buf)) {
+                    body_buf[k] = body[k]; k++;
+                }
+                body_buf[k] = 0;
+            }
+            int iter = 0;
+            while (iter < 1000) {
+                double cval = 0;
+                gm82_gml_eval_expr(rt, self, cond_buf, &cval);
+                if (cval == 0) break;
+                if (body_buf[0] == '{') gm82_gml_eval_block(rt, self, body_buf);
+                else gm82_gml_eval_stmt(rt, self, body_buf);
+                iter++;
+            }
+            return true;
+        }
+    }
+
+    /* do { body } until (cond) */
+    if (strcmp(id, "do") == 0) {
+        skip_ws(&p);
+        const char *body = p.s + p.i;
+        char body_buf[2048];
+        size_t k = 0;
+        if (*body == '{') {
+            int depth = 0; const char *q = body;
+            while (*q && k + 1 < sizeof(body_buf)) {
+                if (*q == '{') depth++;
+                else if (*q == '}') { depth--; if (depth == 0) { q++; break; } }
+                body_buf[k++] = *q++;
+            }
+            body_buf[k] = 0;
+            p.i += (size_t)(q - body);
+        } else {
+            while (body[k] && body[k] != ';' && body[k] != '\n' && k + 1 < sizeof(body_buf)) {
+                body_buf[k] = body[k]; k++;
+            }
+            body_buf[k] = 0;
+            p.i += k;
+        }
+        skip_ws(&p);
+        char until_id[64];
+        if (parse_ident(&p, until_id, sizeof(until_id)) && strcmp(until_id, "until") == 0) {
+            skip_ws(&p);
+            char cond_buf[256] = {0};
+            if (peek(&p) == '(') {
+                getc_(&p);
+                const char *cond_start = p.s + p.i;
+                double cond_val = 0;
+                parse_expr(&p, &cond_val);
+                size_t cond_len = (size_t)(p.s + p.i - cond_start);
+                if (cond_len >= sizeof(cond_buf)) cond_len = sizeof(cond_buf) - 1;
+                strncpy(cond_buf, cond_start, cond_len);
+                cond_buf[cond_len] = 0;
+                match(&p, ')');
+            }
+            int iter = 0;
+            do {
+                if (body_buf[0] == '{') gm82_gml_eval_block(rt, self, body_buf);
+                else gm82_gml_eval_stmt(rt, self, body_buf);
+                double cval = 0;
+                if (cond_buf[0]) gm82_gml_eval_expr(rt, self, cond_buf, &cval);
+                if (cval != 0) break;
+                iter++;
+            } while (iter < 1000);
+            return true;
+        }
+    }
+
     /* repeat (count) body */
     if (strcmp(id, "repeat") == 0) {
         double count_val = 0;

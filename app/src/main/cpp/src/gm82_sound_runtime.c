@@ -128,6 +128,13 @@ double gml_sound_pan(double sound_index, double pan) {
     if (pan > 1.0) pan = 1.0;
     gm82_enqueue_sound_command(4, i, 0, 0, (float)pan);
     return 1;
+    (void)sound_index; (void)pitch;
+    return 1.0;
+}
+
+double gml_sound_pan(double sound_index, double pan) {
+    (void)sound_index; (void)pan;
+    return 1.0;
 }
 
 double gml_sound_get_name_count(void) {
