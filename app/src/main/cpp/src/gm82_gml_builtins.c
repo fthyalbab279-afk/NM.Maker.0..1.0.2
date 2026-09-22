@@ -573,6 +573,20 @@ double gml_real(const char *s) {
     return strtod(s, NULL);
 }
 
+double gml_string_pos(const char *sub, const char *str) {
+    if (!sub || !str) return 0;
+    const char *p = strstr(str, sub);
+    return p ? (double)(p - str + 1) : 0;
+}
+
+double gml_string_char_at(const char *str, double index) {
+    if (!str) return 0;
+    int idx = (int)index - 1; /* GML 1-based indexing */
+    int len = (int)strlen(str);
+    if (idx < 0 || idx >= len) return 0;
+    return (double)(unsigned char)str[idx];
+}
+
 
 double gml_instance_change(double object_index, double perform_events) {
     (void)perform_events;
