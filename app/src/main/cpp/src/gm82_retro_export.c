@@ -9,11 +9,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-double nor_import_format_native(const char *path) {
+__attribute__((weak)) double nor_import_format_native(const char *path) {
     return (path && path[0]) ? 1.0 : 0.0;
 }
 
-double nor_validate_rom_native(const char *path, double kind) {
+__attribute__((weak)) double nor_validate_rom_native(const char *path, double kind) {
     (void)kind;
     if (!path || !path[0]) return 0.0;
     FILE *f = fopen(path, "rb");
@@ -57,25 +57,25 @@ static int write_stub_rom(const char *path, const char *header, size_t hlen) {
     return 1;
 }
 
-double nor_export_nes_native(const char *project, const char *output) {
+__attribute__((weak)) double nor_export_nes_native(const char *project, const char *output) {
     (void)project;
     static const unsigned char nes_hdr[16] = {'N','E','S',0x1A, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     return write_stub_rom(output, (const char *)nes_hdr, sizeof(nes_hdr)) ? 1.0 : 0.0;
 }
 
-double nor_export_gbc_native(const char *project, const char *output) {
+__attribute__((weak)) double nor_export_gbc_native(const char *project, const char *output) {
     (void)project;
     static const unsigned char gbc_hdr[16] = {'G','B','C',0x00, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     return write_stub_rom(output, (const char *)gbc_hdr, sizeof(gbc_hdr)) ? 1.0 : 0.0;
 }
 
-double nor_export_gba_native(const char *project, const char *output) {
+__attribute__((weak)) double nor_export_gba_native(const char *project, const char *output) {
     (void)project;
     static const unsigned char gba_hdr[16] = {'G','B','A',0x00, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     return write_stub_rom(output, (const char *)gba_hdr, sizeof(gba_hdr)) ? 1.0 : 0.0;
 }
 
-int gm82_native_call(void *userdata, const char *name, const gml_value *args, size_t count, gml_value *out) {
+__attribute__((weak)) int gm82_native_call(void *userdata, const char *name, const gml_value *args, size_t count, gml_value *out) {
     (void)userdata;
     if (!name || !out) return 0;
 

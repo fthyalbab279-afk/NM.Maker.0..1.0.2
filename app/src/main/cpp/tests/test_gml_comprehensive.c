@@ -62,6 +62,8 @@ void test_ds_structures(void) {
 void test_string_builtins(void) {
     assert(gml_string_length("NOR_Maker") == 9.0);
     assert(gml_real("123.45") == 123.45);
+    assert(gml_string_pos("world", "Hello world") == 7.0);
+    assert(gml_string_char_at("ABC", 2) == (double)'B');
     printf("  String Builtins PASS\n");
 }
 

@@ -112,12 +112,21 @@ double gml_sound_volume(double sound_index, double volume) {
 }
 
 double gml_sound_pitch(double sound_index, double pitch) {
-    (void)sound_index; (void)pitch;
+    if (!g_sr || !g_sr->sounds) return 1.0;
+    int i = (int)sound_index;
+    if (i < 0 || i >= g_sr->sounds->count) return 1.0;
+    if (pitch <= 0) pitch = 0.1;
+    gm82_enqueue_sound_command(3, i, 0, 0, (float)pitch);
     return 1.0;
 }
 
 double gml_sound_pan(double sound_index, double pan) {
-    (void)sound_index; (void)pan;
+    if (!g_sr || !g_sr->sounds) return 1.0;
+    int i = (int)sound_index;
+    if (i < 0 || i >= g_sr->sounds->count) return 1.0;
+    if (pan < -1.0) pan = -1.0;
+    if (pan > 1.0) pan = 1.0;
+    gm82_enqueue_sound_command(4, i, 0, 0, (float)pan);
     return 1.0;
 }
 
