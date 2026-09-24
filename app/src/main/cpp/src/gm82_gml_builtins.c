@@ -407,9 +407,17 @@ double gml_collision_circle(double xc, double yc, double rad, double obj, double
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        double cx = o->x + ow / 2.0;
-        double cy = o->y + oh / 2.0;
-        double dx = cx - xc, dy = cy - yc;
+
+        double closest_x = xc;
+        if (closest_x < o->x) closest_x = o->x;
+        else if (closest_x > o->x + ow) closest_x = o->x + ow;
+
+        double closest_y = yc;
+        if (closest_y < o->y) closest_y = o->y;
+        else if (closest_y > o->y + oh) closest_y = o->y + oh;
+
+        double dx = xc - closest_x;
+        double dy = yc - closest_y;
         if (dx * dx + dy * dy <= rad_sq)
             return (double)o->id;
     }
@@ -418,6 +426,47 @@ double gml_collision_circle(double xc, double yc, double rad, double obj, double
 
 double gml_collision_point(double x, double y, double obj, double prec, double notme) {
     return gml_collision_rectangle(x, y, x+1, y+1, obj, prec, notme);
+}
+
+static bool line_aabb_overlap(double x1, double y1, double x2, double y2, double bx, double by, double bw, double bh) {
+    double xmin = bx, xmax = bx + bw;
+    double ymin = by, ymax = by + bh;
+    double dx = x2 - x1, dy = y2 - y1;
+
+    double p[4] = { -dx, dx, -dy, dy };
+    double q[4] = { x1 - xmin, xmax - x1, y1 - ymin, ymax - y1 };
+    double u1 = 0.0, u2 = 1.0;
+
+    for (int i = 0; i < 4; i++) {
+        if (p[i] == 0.0) {
+            if (q[i] < 0.0) return false;
+        } else {
+            double t = q[i] / p[i];
+            if (p[i] < 0.0) {
+                if (t > u1) u1 = t;
+            } else {
+                if (t < u2) u2 = t;
+            }
+        }
+    }
+    return u1 <= u2;
+}
+
+double gml_collision_line(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
+    (void)prec;
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)obj;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        if (line_aabb_overlap(x1, y1, x2, y2, o->x, o->y, ow, oh))
+            return (double)o->id;
+    }
+    return -4;
 }
 
 double gml_place_free(double x, double y) {

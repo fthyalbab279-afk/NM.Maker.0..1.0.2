@@ -32,7 +32,7 @@ static void test_auto_detect(void) {
 int main(int argc, char **argv) {
     const char *sample = NULL;
     if (argc > 1) sample = argv[1];
-    else sample = "/home/workdir/artifacts/apk_extract/assets/www/samples/mario_bros.gmk";
+    else sample = "app/src/main/assets/www/samples/mario_bros.gmk";
 
     test_auto_detect();
     test_gmk_sample(sample);

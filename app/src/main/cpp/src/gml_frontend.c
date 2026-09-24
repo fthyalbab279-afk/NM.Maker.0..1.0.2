@@ -220,7 +220,7 @@ static gml_ast *parse_multiplicative(parser_t *p) {
     gml_ast *left = parse_postfix(p);
     while (left) {
         char c = peek_char(p);
-        if (c == '*' || c == '/' || c == '%') {
+        if ((c == '*' || c == '/' || c == '%') && !(p->pos + 1 < p->len && p->src[p->pos + 1] == '=')) {
             get_char(p);
             gml_ast *right = parse_postfix(p);
             gml_ast *bin = new_node(GML_AST_BINARY);
@@ -239,7 +239,7 @@ static gml_ast *parse_additive(parser_t *p) {
     gml_ast *left = parse_multiplicative(p);
     while (left) {
         char c = peek_char(p);
-        if (c == '+' || c == '-') {
+        if ((c == '+' || c == '-') && !(p->pos + 1 < p->len && p->src[p->pos + 1] == '=')) {
             get_char(p);
             gml_ast *right = parse_multiplicative(p);
             gml_ast *bin = new_node(GML_AST_BINARY);
