@@ -6,8 +6,8 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
-last_test_log: "Expanded GML VM (array builtins, string_digits/lower/upper, ini file I/O, collision_circle) tested PASS."
-last_run_date: 2026-09-20
+last_test_log: "Executed full test runner script run_engine_suite.py (test_full_suite, test_dual_load, test_gml_comprehensive, test_gml_ds_collisions, test_gml_vm_execution, test_gml_vm_expanded, test_runtime_guard ALL PASS)."
+last_run_date: 2026-09-23
 
 ## rules (لا تُكسر)
 - never claim 100%
@@ -17,13 +17,13 @@ last_run_date: 2026-09-20
 
 ## progress reality
 Relative to complete Windows GameMaker 8.2 parity, native engine progress is estimated at ~48% (<50%).
-Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), and spatial collisions work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
+Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), sound controls, and spatial collisions work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
 
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Implemented GML array builtins, string manipulation library (string_digits/lower/upper), INI file I/O, collision_circle, and added test_gml_vm_expanded.c.
-TEST: Native C unit tests passing (test_gml_vm_expanded PASS, test_gml_comprehensive PASS, test_phase8_suite PASS).
+DONE: Cleaned up duplicate function definitions, updated unit test suites (dual_load, ds_collisions), and verified engine test runner run_engine_suite.py.
+TEST: Native C test suites passing (test_full_suite, test_dual_load, test_gml_comprehensive, test_gml_ds_collisions, test_gml_vm_execution, test_gml_vm_expanded, test_runtime_guard ALL PASS).
 RESULT: PASS
 REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM bytecode engine, precise per-pixel collisions, Android device testing.
-NEXT: Continue expanding GML VM bytecode compiler capabilities and GLES rendering pipeline.
+NEXT: Continue expanding GML VM capabilities and GLES rendering pipeline.
 CLAIM_100: no
