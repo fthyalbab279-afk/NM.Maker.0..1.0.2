@@ -55,6 +55,7 @@ double gml_point_in_rectangle(double px, double py, double x1, double y1, double
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme);
 double gml_collision_point(double x, double y, double obj, double prec, double notme);
+double gml_collision_line(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_place_free(double x, double y);
 double gml_place_empty(double x, double y);
 double gml_move_contact_solid(double dir, double maxdist);
