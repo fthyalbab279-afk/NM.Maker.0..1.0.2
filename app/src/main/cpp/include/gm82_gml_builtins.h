@@ -260,14 +260,18 @@ double gml_string_delete(const char *str, double index, double count, char *out,
 double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz);
 double gml_array_length_1d(double array_id);
 double gml_array_height_2d(double array_id);
+double gml_array_length_2d(double array_id, double row);
 double gml_mouse_x(void);
 double gml_mouse_y(void);
 double gml_mouse_check_button(double button);
 double gml_mouse_check_button_pressed(double button);
 double gml_instance_change(double object_index, double perform_events);
 double gml_instance_copy(double perform_events);
+double gml_instance_position(double x, double y, double object_index);
 double gml_instance_deactivate_all(double notme);
+double gml_instance_deactivate_object(double object_index);
 double gml_instance_activate_all(void);
+double gml_instance_activate_object(double object_index);
 void gm82_path_bind(gm82_path_list *paths);
 double gml_path_start(double path_index, double speed, double end_action, double absolute);
 double gml_path_end(void);
