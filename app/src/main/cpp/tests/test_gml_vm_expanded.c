@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <assert.h>
 
 int main(void) {
@@ -28,6 +29,18 @@ int main(void) {
 
     gml_string_upper("world", buf, sizeof(buf));
     assert(strcmp(buf, "WORLD") == 0);
+
+    gml_string_letters("A1!B2@C3#", buf, sizeof(buf));
+    assert(strcmp(buf, "ABC") == 0);
+
+    gml_string_repeat("na", 3, buf, sizeof(buf));
+    assert(strcmp(buf, "nanana") == 0);
+
+    double sqr_val = 0, frac_val = 0;
+    gm82_gml_eval_expr(&rt, NULL, "sqr(5.0)", &sqr_val);
+    assert(sqr_val == 25.0);
+    gm82_gml_eval_expr(&rt, NULL, "frac(12.34)", &frac_val);
+    assert(fabs(frac_val - 0.34) < 0.0001);
 
     /* Test INI File I/O */
     const char *ini_path = "/tmp/test_save.ini";

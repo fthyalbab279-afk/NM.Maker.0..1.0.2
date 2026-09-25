@@ -56,6 +56,7 @@ double gml_point_in_circle(double px, double py, double cx, double cy, double ra
 double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3);
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme);
+double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_collision_point(double x, double y, double obj, double prec, double notme);
 double gml_collision_line(double x1, double y1, double x2, double y2, double obj, double prec, double notme);
 double gml_place_free(double x, double y);
@@ -246,8 +247,16 @@ double gml_real(const char *s);
 double gml_string_pos(const char *sub, const char *str);
 double gml_string_char_at(const char *str, double index);
 double gml_string_digits(const char *str, char *out, size_t out_sz);
+double gml_string_letters(const char *str, char *out, size_t out_sz);
 double gml_string_lower(const char *str, char *out, size_t out_sz);
 double gml_string_upper(const char *str, char *out, size_t out_sz);
+double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz);
+double gml_string_replace(const char *str, const char *sub, const char *newstr, char *out, size_t out_sz);
+double gml_string_replace_all(const char *str, const char *sub, const char *newstr, char *out, size_t out_sz);
+double gml_string_count(const char *sub, const char *str);
+double gml_string_delete(const char *str, double index, double count, char *out, size_t out_sz);
+double gml_string_insert(const char *newstr, const char *str, double index, char *out, size_t out_sz);
+double gml_string_repeat(const char *str, double count, char *out, size_t out_sz);
 double gml_array_length_1d(double array_id);
 double gml_array_height_2d(double array_id);
 double gml_mouse_x(void);
@@ -319,6 +328,12 @@ double gml_sound_isplaying(double sound_index);
 
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);
+double gml_sqr(double v);
+double gml_frac(double v);
+double gml_exp(double v);
+double gml_log2(double v);
+double gml_log10(double v);
+double gml_logn(double base, double v);
 double gml_sign(double v);
 double gml_clamp(double v, double lo, double hi);
 double gml_lerp(double a, double b, double t);
