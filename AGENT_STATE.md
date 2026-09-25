@@ -17,7 +17,18 @@ last_run_date: 2026-09-24
 
 ## progress reality
 Relative to complete Windows GameMaker 8.2 parity, native engine progress is estimated at ~48% (<50%).
-Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), motion helpers (motion_set, motion_add, move_towards_point), point geometry (point_in_rectangle, point_in_circle, point_in_triangle), and spatial collisions (collision_point, collision_rectangle, collision_circle, collision_line, collision_ellipse) work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
+Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), sound controls, and spatial collisions work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
+
+## required_reply_format
+PROGRESS: 48% (<50% compared to full Windows GM82)
+DONE: Cleaned up duplicate function definitions, updated unit test suites (dual_load, ds_collisions), and verified engine test runner run_engine_suite.py.
+TEST: Native C test suites passing (test_full_suite, test_dual_load, test_gml_comprehensive, test_gml_ds_collisions, test_gml_vm_execution, test_gml_vm_expanded, test_runtime_guard ALL PASS).
+Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), and spatial collisions (collision_point, collision_rectangle, collision_circle, collision_line) work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
+
+## required_reply_format
+PROGRESS: 48% (<50% compared to full Windows GM82)
+DONE: Implemented gml_collision_line, expanded collision suite (point, rectangle, circle, line), fixed test_gml_ds_collisions compilation and sound runtime pan duplicate definition.
+Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), motion helpers (motion_set, motion_add, move_towards_point), point geometry (point_in_rectangle, point_in_circle, point_in_triangle), and spatial collisions (collision_point, collision_rectangle, collision_circle, collision_line) work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
 
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)

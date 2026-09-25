@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <assert.h>
 
 static void test_bbox_builtins(gm82_runtime *rt) {
