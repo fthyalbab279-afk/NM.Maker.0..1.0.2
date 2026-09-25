@@ -274,11 +274,80 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (!match(p, ')')) return false;
         double arg = args[0];
         if (strcmp(id, "abs") == 0) { *out = fabs(arg); return true; }
+        if (strcmp(id, "sqr") == 0) { *out = arg * arg; return true; }
+        if (strcmp(id, "frac") == 0) { *out = arg - floor(arg); return true; }
+        if (strcmp(id, "exp") == 0) { *out = exp(arg); return true; }
+        if (strcmp(id, "log2") == 0) { *out = log2(arg); return true; }
+        if (strcmp(id, "log10") == 0) { *out = log10(arg); return true; }
+        if (strcmp(id, "logn") == 0) { *out = (args[0] > 0 && args[0] != 1.0) ? (log(args[1]) / log(args[0])) : 0; return true; }
+        if (strcmp(id, "mean") == 0) {
+            double sum = 0;
+            for (int i = 0; i < nargs; i++) sum += args[i];
+            *out = nargs > 0 ? (sum / nargs) : 0;
+            return true;
+        }
+        if (strcmp(id, "degtorad") == 0) { *out = gml_deg_to_rad(arg); return true; }
+        if (strcmp(id, "radtodeg") == 0) { *out = gml_rad_to_deg(arg); return true; }
         if (strcmp(id, "sign") == 0) { *out = arg > 0 ? 1 : (arg < 0 ? -1 : 0); return true; }
         if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)arg + 1)); return true; }
         if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
         if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
         if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
+        if (strcmp(id, "dsin") == 0) { *out = gml_dsin(arg); return true; }
+        if (strcmp(id, "dcos") == 0) { *out = gml_dcos(arg); return true; }
+        if (strcmp(id, "dtan") == 0) { *out = gml_dtan(arg); return true; }
+        if (strcmp(id, "darcsin") == 0) { *out = gml_darcsin(arg); return true; }
+        if (strcmp(id, "darccos") == 0) { *out = gml_darccos(arg); return true; }
+        if (strcmp(id, "darctan") == 0) { *out = gml_darctan(arg); return true; }
+        if (strcmp(id, "display_get_width") == 0) { *out = gml_display_get_width(); return true; }
+        if (strcmp(id, "display_get_height") == 0) { *out = gml_display_get_height(); return true; }
+        if (strcmp(id, "window_get_width") == 0) { *out = gml_window_get_width(); return true; }
+        if (strcmp(id, "window_get_height") == 0) { *out = gml_window_get_height(); return true; }
+        if (strcmp(id, "surface_create") == 0) { *out = gml_surface_create(args[0], args[1]); return true; }
+        if (strcmp(id, "surface_free") == 0) { *out = gml_surface_free(args[0]); return true; }
+        if (strcmp(id, "surface_exists") == 0) { *out = gml_surface_exists(args[0]); return true; }
+        if (strcmp(id, "surface_get_width") == 0) { *out = gml_surface_get_width(args[0]); return true; }
+        if (strcmp(id, "surface_get_height") == 0) { *out = gml_surface_get_height(args[0]); return true; }
+        if (strcmp(id, "surface_set_target") == 0) { *out = gml_surface_set_target(args[0]); return true; }
+        if (strcmp(id, "surface_reset_target") == 0) { *out = gml_surface_reset_target(); return true; }
+        if (strcmp(id, "draw_surface") == 0) { *out = gml_draw_surface(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "string_count") == 0) { *out = gml_string_count((const char *)(uintptr_t)args[0], (const char *)(uintptr_t)args[1]); return true; }
+        if (strcmp(id, "point_distance") == 0) {
+            *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true;
+        }
+        if (strcmp(id, "point_direction") == 0) {
+            *out = gml_point_direction(args[0], args[1], args[2], args[3]); return true;
+        }
+        if (strcmp(id, "lengthdir_x") == 0) {
+            *out = gml_lengthdir_x(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "lengthdir_y") == 0) {
+            *out = gml_lengthdir_y(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "collision_ellipse") == 0) {
+            double oarg = (nargs >= 5) ? args[4] : -1;
+            double parg = (nargs >= 6) ? args[5] : 0;
+            double nmarg = (nargs >= 7) ? args[6] : 0;
+            *out = gml_collision_ellipse(args[0], args[1], args[2], args[3], oarg, parg, nmarg); return true;
+        }
+        if (strcmp(id, "collision_circle") == 0) {
+            double oarg = (nargs >= 4) ? args[3] : -1;
+            double parg = (nargs >= 5) ? args[4] : 0;
+            double nmarg = (nargs >= 6) ? args[5] : 0;
+            *out = gml_collision_circle(args[0], args[1], args[2], oarg, parg, nmarg); return true;
+        }
+        if (strcmp(id, "collision_rectangle") == 0) {
+            double oarg = (nargs >= 5) ? args[4] : -1;
+            double parg = (nargs >= 6) ? args[5] : 0;
+            double nmarg = (nargs >= 7) ? args[6] : 0;
+            *out = gml_collision_rectangle(args[0], args[1], args[2], args[3], oarg, parg, nmarg); return true;
+        }
+        if (strcmp(id, "collision_line") == 0) {
+            double oarg = (nargs >= 5) ? args[4] : -1;
+            double parg = (nargs >= 6) ? args[5] : 0;
+            double nmarg = (nargs >= 7) ? args[6] : 0;
+            *out = gml_collision_line(args[0], args[1], args[2], args[3], oarg, parg, nmarg); return true;
+        }
         if (strcmp(id, "keyboard_check") == 0) {
             *out = gml_keyboard_check(arg); return true;
         }
