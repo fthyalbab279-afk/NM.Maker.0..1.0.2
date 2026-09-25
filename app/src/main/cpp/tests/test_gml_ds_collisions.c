@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <assert.h>
 
 static void test_bbox_builtins(gm82_runtime *rt) {
@@ -93,6 +94,26 @@ static void test_collision_functions(gm82_runtime *rt) {
     puts("test_collision_functions PASS");
 }
 
+static void test_motion_functions(gm82_runtime *rt) {
+    gm82_instance *inst = gm82_runtime_instance_create(rt, 2, 0.0, 0.0);
+    assert(inst != NULL);
+    gm82_gml_set_self(inst);
+
+    gml_motion_set(0.0, 5.0);
+    assert(fabs(gml_get_hspeed() - 5.0) < 0.001);
+    assert(fabs(gml_get_vspeed() - 0.0) < 0.001);
+
+    gml_motion_add(90.0, 5.0);
+    assert(fabs(gml_get_hspeed() - 5.0) < 0.001);
+    assert(fabs(gml_get_vspeed() - (-5.0)) < 0.001);
+
+    gml_move_towards_point(100.0, 0.0, 10.0);
+    assert(fabs(gml_get_hspeed() - 10.0) < 0.001);
+    assert(fabs(gml_get_vspeed() - 0.0) < 0.001);
+
+    puts("test_motion_functions PASS");
+}
+
 int main(void) {
     puts("=== Testing GML Data Structures & Collision Built-ins ===");
     gm82_runtime rt;
@@ -103,6 +124,7 @@ int main(void) {
     test_ds_data_structures();
     test_sound_controls();
     test_collision_functions(&rt);
+    test_motion_functions(&rt);
 
     puts("GML_DS_COLLISIONS_TEST_PASS");
     return 0;
