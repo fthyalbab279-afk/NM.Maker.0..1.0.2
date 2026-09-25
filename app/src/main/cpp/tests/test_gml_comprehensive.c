@@ -61,14 +61,31 @@ int main(void) {
     assert(fabs(gml_dcos(0.0) - 1.0) < 0.0001);
     assert(fabs(gml_darcsin(1.0) - 90.0) < 0.0001);
 
-    /* Test GML expression evaluation of trig & vector functions */
-    double dist = 0, dir = 0, lx = 0;
+    /* Test GML expression evaluation of math, trig & vector functions */
+    double dist = 0, dir = 0, lx = 0, val_sqr = 0, val_frac = 0, val_mean = 0, val_disp = 0, val_surf = 0;
     gm82_gml_eval_expr(&rt, inst, "point_distance(0, 0, 6, 8)", &dist);
     assert(dist == 10.0);
     gm82_gml_eval_expr(&rt, inst, "point_direction(0, 0, 0, 10)", &dir);
     assert(dir == 270.0);
     gm82_gml_eval_expr(&rt, inst, "lengthdir_x(5, 0)", &lx);
     assert(lx == 5.0);
+
+    gm82_gml_eval_expr(&rt, inst, "sqr(4)", &val_sqr);
+    assert(val_sqr == 16.0);
+    gm82_gml_eval_expr(&rt, inst, "frac(5.75)", &val_frac);
+    assert(fabs(val_frac - 0.75) < 0.0001);
+    gm82_gml_eval_expr(&rt, inst, "mean(10, 20, 30)", &val_mean);
+    assert(val_mean == 20.0);
+    gm82_gml_eval_expr(&rt, inst, "display_get_width()", &val_disp);
+    assert(val_disp > 0);
+
+    /* Test surface lifecycle in evaluator */
+    gm82_gml_eval_expr(&rt, inst, "surface_create(64, 64)", &val_surf);
+    assert(val_surf >= 0);
+    double surf_exists = 0;
+    gm82_gml_eval_expr(&rt, inst, "surface_exists(0)", &surf_exists);
+    assert(surf_exists == 1.0);
+    gm82_gml_eval_expr(&rt, inst, "surface_free(0)", &surf_exists);
 
     puts("GML_COMPREHENSIVE_VM_TEST_PASS");
     return 0;
