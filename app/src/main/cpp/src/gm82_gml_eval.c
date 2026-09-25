@@ -269,13 +269,13 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (v == 0) ? 1 : 0;
         return true;
     }
-    /* function call? collect up to 4 args */
+    /* function call? collect up to 8 args */
     if (match(p, '(')) {
-        double args[4] = {0,0,0,0};
+        double args[8] = {0};
         int nargs = 0;
         if (peek(p) != ')') {
             for (;;) {
-                if (nargs >= 4) return false;
+                if (nargs >= 8) return false;
                 if (!parse_expr(p, &args[nargs])) return false;
                 nargs++;
                 if (peek(p) != ',') break;
@@ -290,6 +290,42 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
         if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
         if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
+        if (strcmp(id, "point_distance") == 0) {
+            *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true;
+        }
+        if (strcmp(id, "point_direction") == 0) {
+            *out = gml_point_direction(args[0], args[1], args[2], args[3]); return true;
+        }
+        if (strcmp(id, "lengthdir_x") == 0) {
+            *out = gml_lengthdir_x(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "lengthdir_y") == 0) {
+            *out = gml_lengthdir_y(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "collision_ellipse") == 0) {
+            double oarg = (nargs >= 5) ? args[4] : -1;
+            double parg = (nargs >= 6) ? args[5] : 0;
+            double nmarg = (nargs >= 7) ? args[6] : 0;
+            *out = gml_collision_ellipse(args[0], args[1], args[2], args[3], oarg, parg, nmarg); return true;
+        }
+        if (strcmp(id, "collision_circle") == 0) {
+            double oarg = (nargs >= 4) ? args[3] : -1;
+            double parg = (nargs >= 5) ? args[4] : 0;
+            double nmarg = (nargs >= 6) ? args[5] : 0;
+            *out = gml_collision_circle(args[0], args[1], args[2], oarg, parg, nmarg); return true;
+        }
+        if (strcmp(id, "collision_rectangle") == 0) {
+            double oarg = (nargs >= 5) ? args[4] : -1;
+            double parg = (nargs >= 6) ? args[5] : 0;
+            double nmarg = (nargs >= 7) ? args[6] : 0;
+            *out = gml_collision_rectangle(args[0], args[1], args[2], args[3], oarg, parg, nmarg); return true;
+        }
+        if (strcmp(id, "collision_line") == 0) {
+            double oarg = (nargs >= 5) ? args[4] : -1;
+            double parg = (nargs >= 6) ? args[5] : 0;
+            double nmarg = (nargs >= 7) ? args[6] : 0;
+            *out = gml_collision_line(args[0], args[1], args[2], args[3], oarg, parg, nmarg); return true;
+        }
         if (strcmp(id, "keyboard_check") == 0) {
             *out = gml_keyboard_check(arg); return true;
         }
