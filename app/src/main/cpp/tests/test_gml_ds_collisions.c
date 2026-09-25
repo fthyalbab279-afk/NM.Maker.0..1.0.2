@@ -114,6 +114,22 @@ static void test_motion_functions(gm82_runtime *rt) {
     puts("test_motion_functions PASS");
 }
 
+static void test_point_in_geometry_functions(void) {
+    /* Point in rectangle */
+    assert(gml_point_in_rectangle(50.0, 50.0, 0.0, 0.0, 100.0, 100.0) == 1.0);
+    assert(gml_point_in_rectangle(150.0, 50.0, 0.0, 0.0, 100.0, 100.0) == 0.0);
+
+    /* Point in circle */
+    assert(gml_point_in_circle(50.0, 50.0, 50.0, 50.0, 10.0) == 1.0);
+    assert(gml_point_in_circle(100.0, 100.0, 50.0, 50.0, 10.0) == 0.0);
+
+    /* Point in triangle */
+    assert(gml_point_in_triangle(10.0, 10.0, 0.0, 0.0, 100.0, 0.0, 0.0, 100.0) == 1.0);
+    assert(gml_point_in_triangle(200.0, 200.0, 0.0, 0.0, 100.0, 0.0, 0.0, 100.0) == 0.0);
+
+    puts("test_point_in_geometry_functions PASS");
+}
+
 int main(void) {
     puts("=== Testing GML Data Structures & Collision Built-ins ===");
     gm82_runtime rt;
@@ -125,6 +141,7 @@ int main(void) {
     test_sound_controls();
     test_collision_functions(&rt);
     test_motion_functions(&rt);
+    test_point_in_geometry_functions();
 
     puts("GML_DS_COLLISIONS_TEST_PASS");
     return 0;

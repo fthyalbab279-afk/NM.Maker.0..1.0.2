@@ -240,21 +240,6 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
         else self->vspeed = -self->vspeed;
         return true;
     }
-    if (strcmp(ar->name, "action_set_score") == 0) {
-        if (ar->kind != 0) gml_set_score(gml_get_score() + ar->action_id);
-        else gml_set_score((double)ar->action_id);
-        return true;
-    }
-    if (strcmp(ar->name, "action_set_lives") == 0) {
-        if (ar->kind != 0) gml_set_lives(gml_get_lives() + ar->action_id);
-        else gml_set_lives((double)ar->action_id);
-        return true;
-    }
-    if (strcmp(ar->name, "action_set_health") == 0) {
-        if (ar->kind != 0) gml_set_health(gml_get_health() + ar->action_id);
-        else gml_set_health((double)ar->action_id);
-        return true;
-    }
     if (strcmp(ar->name, "action_set_gravity") == 0) {
         self->gravity = (double)ar->action_id;
         if (ar->kind != 0) self->gravity_direction = (double)ar->kind;
