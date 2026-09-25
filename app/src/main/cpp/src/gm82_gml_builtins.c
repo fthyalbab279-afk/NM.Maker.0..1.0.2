@@ -728,6 +728,36 @@ double gml_string_digits(const char *str, char *out, size_t out_sz) {
     return (double)k;
 }
 
+double gml_string_letters(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        if (isalpha((unsigned char)str[i])) out[k++] = str[i];
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_string_repeat(const char *str, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str || count <= 0) return 0;
+    size_t slen = strlen(str);
+    if (slen == 0) return 0;
+    int times = (int)count;
+    size_t pos = 0;
+    for (int t = 0; t < times && pos + 1 < out_sz; t++) {
+        size_t n = slen;
+        if (pos + n >= out_sz) n = out_sz - 1 - pos;
+        memcpy(out + pos, str, n);
+        pos += n;
+    }
+    out[pos] = 0;
+    return (double)pos;
+}
+
 double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz) {
     if (!out || out_sz == 0) return 0;
     out[0] = 0;
