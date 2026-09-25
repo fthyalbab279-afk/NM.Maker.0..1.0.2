@@ -1,20 +1,37 @@
-# حالة الوكيل (Agent State)
+# AGENT_STATE.md — NOR_MAKER Plan B (ملزم لأي وكيل / Jules)
 
-تاريخ التحديث: 2026-09-24
-النسبة الحالية المحققة من Windows GM82 الأصلي: **~48%** (أقل من 50% - بدون ادعاء باطل).
+plan_B_percent: 48
+is_100: false
+claim_100_percent_allowed: false
+release_tag: HOST_PROTOTYPE
 
-## الإنجازات المكتملة والمحققة باختبارات فعلية:
-1. فك ضغط وحزم ملفات GMK واستخراج الكائنات، الغرف، السكربتات، الأصوات، والخلفيات.
-2. المحاكي الفيزيائي الأساسي وحركات الكائنات (`x`, `y`, `hspeed`, `vspeed`, `gravity`, `friction`, `solid`).
-3. نظام التصادمات الهندسي الأساسي (`place_free`, `place_empty`, `collision_circle`, `collision_rectangle`, `collision_line`, `collision_point`).
-4. المتغيرات الخاصة بالرؤية والعرض (`view_xview`, `view_yview`, `view_wview`, `view_hview`, `view_enabled`, `view_visible`).
-5. هياكل البيانات (`ds_list_*`, `ds_map_*`, `ds_stack_*`, `ds_queue_*`).
-6. مفسر GML وحلقات التكرار (`while`, `do...until`, `repeat`, `with`).
-7. دوال النصوص و I/O للملفات (`string_*`, `ini_open`, `ini_read_*`, `ini_write_*`).
-8. وحدة اختبارات النواة الشاملة تعمل بنسبة 100% نجاح (`test_gml_vm`, `test_gml_comprehensive`, `test_gml_ds_collisions`, `test_full_suite`).
+last_result: PASS
+last_test_log: "Executed full test runner script run_engine_suite.py (test_full_suite, test_dual_load, test_gml_comprehensive, test_gml_ds_collisions, test_gml_vm_execution, test_gml_vm_expanded, test_runtime_guard ALL PASS)."
+last_run_date: 2026-09-23
+last_test_log: "Line collision algorithm gml_collision_line implemented and tested PASS alongside collision_point, collision_rectangle, collision_circle, ds_list, ds_map, and sound controls in test_gml_ds_collisions.c."
+last_run_date: 2026-09-24
 
-## الخطط القادمة لرفع النسبة إلى 100%:
-- المرحلة 1: بناء وحدة الترجمة الشاملة Bytecode Compiler لتحويل كافة دوال GML مباشرة مع الدعم الكامل للمصفوفات ثنائية الأبعاد (2D Arrays).
-- المرحلة 2: بناء محرك الرسوميات OpenGL ES HW Rendering المكتمل مع خامات التكستشر والتأثيرات الرسومية المتطورة.
-- المرحلة 3: بناء محرك الصوت المتقدم OpenSL ES لدعم الصوت ثلاثي الأبعاد وتعدد القنوات.
-- المرحلة 4: بناء نظام التصادمات الدقيق على مستوى البيكسل (Per-pixel precision collisions with sprite masks).
+## rules (لا تُكسر)
+- never claim 100%
+- never say: complete engine, full GML VM done, production-ready, finished Plan B
+- never rewrite overall architecture
+- authority: GAPS_HONEST.md + this file > README > PR titles
+
+## progress reality
+Relative to complete Windows GameMaker 8.2 parity, native engine progress is estimated at ~48% (<50%).
+Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), sound controls, and spatial collisions work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
+
+## required_reply_format
+PROGRESS: 48% (<50% compared to full Windows GM82)
+DONE: Cleaned up duplicate function definitions, updated unit test suites (dual_load, ds_collisions), and verified engine test runner run_engine_suite.py.
+TEST: Native C test suites passing (test_full_suite, test_dual_load, test_gml_comprehensive, test_gml_ds_collisions, test_gml_vm_execution, test_gml_vm_expanded, test_runtime_guard ALL PASS).
+Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), and spatial collisions (collision_point, collision_rectangle, collision_circle, collision_line) work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
+
+## required_reply_format
+PROGRESS: 48% (<50% compared to full Windows GM82)
+DONE: Implemented gml_collision_line, expanded collision suite (point, rectangle, circle, line), fixed test_gml_ds_collisions compilation and sound runtime pan duplicate definition.
+TEST: Native C unit tests passing (test_gml_ds_collisions PASS, test_gml_vm_expanded PASS, test_gml_comprehensive PASS, test_full_suite PASS).
+RESULT: PASS
+REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM bytecode engine, precise per-pixel collisions, Android device testing.
+NEXT: Continue expanding GML VM capabilities and GLES rendering pipeline.
+CLAIM_100: no
