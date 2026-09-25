@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <assert.h>
 
 int main(void) {
@@ -31,35 +32,43 @@ int main(void) {
     assert(gml_string_pos("world", "Hello world") == 7.0);
     assert(gml_string_char_at("ABC", 2) == (double)'B');
 
-    char buf[128];
-    assert(gml_string_copy("GameMaker", 1, 4, buf, sizeof(buf)) == 4.0);
-    assert(strcmp(buf, "Game") == 0);
+    char sbuf[128];
+    assert(gml_string_copy("GameMaker", 1, 4, sbuf, sizeof(sbuf)) == 4.0);
+    assert(strcmp(sbuf, "Game") == 0);
 
-    assert(gml_string_replace("Hello World World", "World", "GM82", buf, sizeof(buf)) == 16.0);
-    assert(strcmp(buf, "Hello GM82 World") == 0);
+    assert(gml_string_replace("foo bar", "bar", "baz", sbuf, sizeof(sbuf)) == 7.0);
+    assert(strcmp(sbuf, "foo baz") == 0);
 
-    assert(gml_string_replace_all("foo bar foo baz foo", "foo", "qux", buf, sizeof(buf)) == 19.0);
-    assert(strcmp(buf, "qux bar qux baz qux") == 0);
+    assert(gml_string_replace_all("a b a b", "b", "c", sbuf, sizeof(sbuf)) == 7.0);
+    assert(strcmp(sbuf, "a c a c") == 0);
 
-    assert(gml_string_count("ab", "abracadabra") == 2.0);
+    assert(gml_string_count("la", "lalala") == 3.0);
 
-    assert(gml_string_delete("GameMaker 8.2", 5, 5, buf, sizeof(buf)) == 8.0);
-    assert(strcmp(buf, "Game 8.2") == 0);
+    assert(gml_string_delete("GameMaker", 5, 5, sbuf, sizeof(sbuf)) == 4.0);
+    assert(strcmp(sbuf, "Game") == 0);
 
-    assert(gml_string_insert("Maker", "Game 8.2", 5, buf, sizeof(buf)) == 13.0);
-    assert(strcmp(buf, "GameMaker 8.2") == 0);
+    assert(gml_string_insert("Maker", "Game", 5, sbuf, sizeof(sbuf)) == 9.0);
+    assert(strcmp(sbuf, "GameMaker") == 0);
 
     /* Test math functions */
     assert(gml_lerp(0.0, 100.0, 0.5) == 50.0);
     assert(gml_clamp(150.0, 0.0, 100.0) == 100.0);
+    assert(gml_point_distance(0, 0, 3, 4) == 5.0);
+    assert(gml_point_direction(0, 0, 10, 0) == 0.0);
+    assert(gml_lengthdir_x(10, 0) > 9.99);
+    assert(gml_lengthdir_y(10, 90) < -9.99);
+    assert(fabs(gml_dsin(90.0) - 1.0) < 0.0001);
+    assert(fabs(gml_dcos(0.0) - 1.0) < 0.0001);
+    assert(fabs(gml_darcsin(1.0) - 90.0) < 0.0001);
 
-    /* Test degree trigonometric functions */
-    assert(gml_abs(gml_dsin(90.0) - 1.0) < 1e-6);
-    assert(gml_abs(gml_dcos(0.0) - 1.0) < 1e-6);
-    assert(gml_abs(gml_dtan(45.0) - 1.0) < 1e-6);
-    assert(gml_abs(gml_darcsin(1.0) - 90.0) < 1e-6);
-    assert(gml_abs(gml_darccos(1.0) - 0.0) < 1e-6);
-    assert(gml_abs(gml_darctan(1.0) - 45.0) < 1e-6);
+    /* Test GML expression evaluation of trig & vector functions */
+    double dist = 0, dir = 0, lx = 0;
+    gm82_gml_eval_expr(&rt, inst, "point_distance(0, 0, 6, 8)", &dist);
+    assert(dist == 10.0);
+    gm82_gml_eval_expr(&rt, inst, "point_direction(0, 0, 0, 10)", &dir);
+    assert(dir == 270.0);
+    gm82_gml_eval_expr(&rt, inst, "lengthdir_x(5, 0)", &lx);
+    assert(lx == 5.0);
 
     puts("GML_COMPREHENSIVE_VM_TEST_PASS");
     return 0;

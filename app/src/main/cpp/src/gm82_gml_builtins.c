@@ -107,7 +107,10 @@ double gml_point_distance(double x1, double y1, double x2, double y2) {
 }
 
 double gml_point_direction(double x1, double y1, double x2, double y2) {
-    return atan2(-(y2 - y1), (x2 - x1)) * 180.0 / M_PI;
+    double dir = atan2(-(y2 - y1), (x2 - x1)) * 180.0 / M_PI;
+    if (dir < 0.0) dir += 360.0;
+    if (dir >= 360.0) dir -= 360.0;
+    return dir;
 }
 
 static bool sprite_size(gm82_runtime *rt, int32_t sprite_index, int32_t *w, int32_t *h) {
@@ -175,6 +178,42 @@ double gml_instance_place(double x, double y, double object_index) {
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
         if (aabb_overlap(x, y, sw, sh, o->x, o->y, ow, oh))
+            return (double)o->id;
+    }
+    return -4;
+}
+
+double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
+    (void)prec;
+    if (!g_rt) return -4;
+    if (x1 > x2) { double t=x1; x1=x2; x2=t; }
+    if (y1 > y2) { double t=y1; y1=y2; y2=t; }
+    double cx = (x1 + x2) * 0.5;
+    double cy = (y1 + y2) * 0.5;
+    double rx = (x2 - x1) * 0.5;
+    double ry = (y2 - y1) * 0.5;
+    if (rx <= 0 || ry <= 0) return -4;
+
+    int32_t oi = (int32_t)obj;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+
+        double closest_x = cx;
+        if (closest_x < o->x) closest_x = o->x;
+        else if (closest_x > o->x + ow) closest_x = o->x + ow;
+
+        double closest_y = cy;
+        if (closest_y < o->y) closest_y = o->y;
+        else if (closest_y > o->y + oh) closest_y = o->y + oh;
+
+        double dx = (closest_x - cx) / rx;
+        double dy = (closest_y - cy) / ry;
+        if (dx * dx + dy * dy <= 1.0)
             return (double)o->id;
     }
     return -4;
@@ -410,6 +449,17 @@ double gml_collision_circle(double xc, double yc, double rad, double obj, double
         double cx = o->x + ow / 2.0;
         double cy = o->y + oh / 2.0;
         double dx = cx - xc, dy = cy - yc;
+
+        double closest_x = xc;
+        if (closest_x < o->x) closest_x = o->x;
+        else if (closest_x > o->x + ow) closest_x = o->x + ow;
+
+        double closest_y = yc;
+        if (closest_y < o->y) closest_y = o->y;
+        else if (closest_y > o->y + oh) closest_y = o->y + oh;
+
+        double dx = xc - closest_x;
+        double dy = yc - closest_y;
         if (dx * dx + dy * dy <= rad_sq)
             return (double)o->id;
     }
@@ -681,87 +731,83 @@ double gml_string_digits(const char *str, char *out, size_t out_sz) {
 double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz) {
     if (!out || out_sz == 0) return 0;
     out[0] = 0;
-    if (!str) return 0;
-    int idx = (int)index - 1; /* 1-based in GML */
-    int cnt = (int)count;
+    if (!str || count <= 0) return 0;
+    int idx = (int)index - 1; /* GML 1-based */
     int len = (int)strlen(str);
-    if (idx < 0) idx = 0;
-    if (idx >= len || cnt <= 0) return 0;
-    if (idx + cnt > len) cnt = len - idx;
-    if ((size_t)cnt >= out_sz) cnt = (int)out_sz - 1;
-    memcpy(out, str + idx, (size_t)cnt);
-    out[cnt] = 0;
-    return (double)cnt;
+    if (idx < 0) { count += idx; idx = 0; }
+    if (idx >= len || count <= 0) return 0;
+    size_t n = (size_t)count;
+    if (idx + n > (size_t)len) n = (size_t)(len - idx);
+    if (n >= out_sz) n = out_sz - 1;
+    memcpy(out, str + idx, n);
+    out[n] = 0;
+    return (double)n;
 }
 
-double gml_string_replace(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz) {
+double gml_string_replace(const char *str, const char *sub, const char *newstr, char *out, size_t out_sz) {
     if (!out || out_sz == 0) return 0;
     out[0] = 0;
     if (!str) return 0;
-    if (!substr || !substr[0]) {
-        snprintf(out, out_sz, "%s", str);
+    if (!sub || !*sub || !newstr) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
         return (double)strlen(out);
     }
-    const char *p = strstr(str, substr);
-    if (!p) {
-        snprintf(out, out_sz, "%s", str);
+    const char *pos = strstr(str, sub);
+    if (!pos) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
         return (double)strlen(out);
     }
-    size_t head_len = (size_t)(p - str);
-    const char *rep = newstr ? newstr : "";
-    snprintf(out, out_sz, "%.*s%s%s", (int)head_len, str, rep, p + strlen(substr));
+    size_t prefix_len = (size_t)(pos - str);
+    size_t sub_len = strlen(sub);
+    snprintf(out, out_sz, "%.*s%s%s", (int)prefix_len, str, newstr, pos + sub_len);
     return (double)strlen(out);
 }
 
-double gml_string_replace_all(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz) {
+double gml_string_replace_all(const char *str, const char *sub, const char *newstr, char *out, size_t out_sz) {
     if (!out || out_sz == 0) return 0;
     out[0] = 0;
     if (!str) return 0;
-    if (!substr || !substr[0]) {
-        snprintf(out, out_sz, "%s", str);
+    if (!sub || !*sub || !newstr) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
         return (double)strlen(out);
     }
-    const char *rep = newstr ? newstr : "";
-    size_t sub_len = strlen(substr);
-    size_t rep_len = strlen(rep);
+    size_t sub_len = strlen(sub);
     size_t out_pos = 0;
     const char *cur = str;
-
     while (*cur && out_pos + 1 < out_sz) {
-        const char *p = strstr(cur, substr);
-        if (!p) {
+        const char *pos = strstr(cur, sub);
+        if (!pos) {
             size_t rem = strlen(cur);
-            if (out_pos + rem >= out_sz) rem = out_sz - out_pos - 1;
+            if (out_pos + rem >= out_sz) rem = out_sz - 1 - out_pos;
             memcpy(out + out_pos, cur, rem);
             out_pos += rem;
             break;
         }
-        size_t head = (size_t)(p - cur);
-        if (out_pos + head >= out_sz) head = out_sz - out_pos - 1;
-        memcpy(out + out_pos, cur, head);
-        out_pos += head;
+        size_t chunk = (size_t)(pos - cur);
+        if (out_pos + chunk >= out_sz) chunk = out_sz - 1 - out_pos;
+        memcpy(out + out_pos, cur, chunk);
+        out_pos += chunk;
 
-        if (out_pos + rep_len >= out_sz) {
-            size_t rrem = out_sz - out_pos - 1;
-            memcpy(out + out_pos, rep, rrem);
-            out_pos += rrem;
-            break;
-        }
-        memcpy(out + out_pos, rep, rep_len);
-        out_pos += rep_len;
+        size_t nlen = strlen(newstr);
+        if (out_pos + nlen >= out_sz) nlen = out_sz - 1 - out_pos;
+        memcpy(out + out_pos, newstr, nlen);
+        out_pos += nlen;
 
-        cur = p + sub_len;
+        cur = pos + sub_len;
     }
     out[out_pos] = 0;
     return (double)out_pos;
 }
 
-double gml_string_count(const char *substr, const char *str) {
-    if (!substr || !substr[0] || !str) return 0;
+double gml_string_count(const char *sub, const char *str) {
+    if (!sub || !*sub || !str) return 0;
+    size_t sub_len = strlen(sub);
     double count = 0;
-    size_t sub_len = strlen(substr);
     const char *p = str;
-    while ((p = strstr(p, substr)) != NULL) {
+    while ((p = strstr(p, sub)) != NULL) {
         count += 1.0;
         p += sub_len;
     }
@@ -772,34 +818,29 @@ double gml_string_delete(const char *str, double index, double count, char *out,
     if (!out || out_sz == 0) return 0;
     out[0] = 0;
     if (!str) return 0;
-    int idx = (int)index - 1; /* 1-based */
-    int cnt = (int)count;
+    int idx = (int)index - 1; /* GML 1-based */
     int len = (int)strlen(str);
-    if (idx < 0) idx = 0;
-    if (idx >= len || cnt <= 0) {
-        snprintf(out, out_sz, "%s", str);
+    if (idx < 0 || idx >= len || count <= 0) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
         return (double)strlen(out);
     }
-    int del_end = idx + cnt;
-    if (del_end > len) del_end = len;
-
-    size_t head_len = (size_t)idx;
-    size_t tail_len = (size_t)(len - del_end);
-    snprintf(out, out_sz, "%.*s%.*s", (int)head_len, str, (int)tail_len, str + del_end);
+    size_t del_n = (size_t)count;
+    if (idx + del_n > (size_t)len) del_n = (size_t)(len - idx);
+    snprintf(out, out_sz, "%.*s%s", idx, str, str + idx + del_n);
     return (double)strlen(out);
 }
 
-double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz) {
+double gml_string_insert(const char *newstr, const char *str, double index, char *out, size_t out_sz) {
     if (!out || out_sz == 0) return 0;
     out[0] = 0;
-    if (!str) str = "";
-    const char *sub = substr ? substr : "";
-    int idx = (int)index - 1; /* 1-based */
+    if (!str) return 0;
+    if (!newstr) newstr = "";
+    int idx = (int)index - 1; /* GML 1-based */
     int len = (int)strlen(str);
     if (idx < 0) idx = 0;
     if (idx > len) idx = len;
-
-    snprintf(out, out_sz, "%.*s%s%s", idx, str, sub, str + idx);
+    snprintf(out, out_sz, "%.*s%s%s", idx, str, newstr, str + idx);
     return (double)strlen(out);
 }
 
