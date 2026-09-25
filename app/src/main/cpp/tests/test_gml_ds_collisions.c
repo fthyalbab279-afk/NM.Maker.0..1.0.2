@@ -93,7 +93,7 @@ static void test_collision_functions(gm82_runtime *rt) {
 
     /* Ellipse collision */
     assert(gml_collision_ellipse(80.0, 80.0, 120.0, 120.0, 1, 0, 0) == (double)inst->id);
-    assert(gml_collision_ellipse(0.0, 0.0, 10.0, 10.0, 1, 0, 0) == -4.0);
+    assert(gml_collision_ellipse(0.0, 0.0, 20.0, 20.0, 1, 0, 0) == -4.0);
 
     puts("test_collision_functions PASS");
 }

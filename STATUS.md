@@ -4,7 +4,7 @@
 النسبة الفعلية مقارنة بـ Windows GM82 الكامل: **~48% (أقل من 50%)**
 
 ## 📌 ملخص الوضع الحالي
-- النواة تتطور كنسخة أولية على Host (تفك GMK، تمارس Soft Render، تحاكي فيزياء ماريو، تنفذ أفعال DnD وحلقات GML التحكمية `while`, `do...until` والمصفوفات ودوال INI I/O ودوال النصوص والدوائر الصدامية `collision_circle` والدقائق الخطية `collision_line` ودوال الحركة `motion_set`, `motion_add`, `move_towards_point` ودوال الهندسة `point_in_rectangle`, `point_in_circle`, `point_in_triangle`).
+- النواة تتطور كنسخة أولية على Host (تفك GMK، تمارس Soft Render، تحاكي فيزياء ماريو، تنفذ أفعال DnD وحلقات GML التحكمية `while`, `do...until` والمصفوفات ودوال INI I/O ودوال النصوص والدوائر الصدامية `collision_circle` والدقائق الخطية `collision_line` والبيضاويات `collision_ellipse` ودوال الحركة `motion_set`, `motion_add`, `move_towards_point` ودوال الهندسة `point_in_rectangle`, `point_in_circle`, `point_in_triangle`).
 - النسبة الإجمالية مقارنة بالمحرك الكامل لويندوز هي **48%**.
 
 ## ❌ النواقص الأساسية للوصول لـ 100%
