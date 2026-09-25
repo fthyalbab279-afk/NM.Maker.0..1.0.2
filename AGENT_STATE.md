@@ -6,7 +6,9 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
-last_test_log: "GML point-in-geometry builtins (gml_point_in_rectangle, gml_point_in_circle, gml_point_in_triangle), motion functions, and line collision algorithm tested PASS in test_gml_ds_collisions.c."
+last_test_log: "Executed full test runner script run_engine_suite.py (test_full_suite, test_dual_load, test_gml_comprehensive, test_gml_ds_collisions, test_gml_vm_execution, test_gml_vm_expanded, test_runtime_guard ALL PASS)."
+last_run_date: 2026-09-23
+last_test_log: "Line collision algorithm gml_collision_line implemented and tested PASS alongside collision_point, collision_rectangle, collision_circle, ds_list, ds_map, and sound controls in test_gml_ds_collisions.c."
 last_run_date: 2026-09-24
 
 ## rules (لا تُكسر)
@@ -28,13 +30,8 @@ Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/a
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)
 DONE: Implemented gml_collision_line, expanded collision suite (point, rectangle, circle, line), fixed test_gml_ds_collisions compilation and sound runtime pan duplicate definition.
-Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), motion helpers (motion_set, motion_add, move_towards_point), point geometry (point_in_rectangle, point_in_circle, point_in_triangle), and spatial collisions (collision_point, collision_rectangle, collision_circle, collision_line) work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
-
-## required_reply_format
-PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Implemented gml_point_in_circle and gml_point_in_triangle, added test_point_in_geometry_functions, and verified test_gml_ds_collisions PASS.
 TEST: Native C unit tests passing (test_gml_ds_collisions PASS, test_gml_vm_expanded PASS, test_gml_comprehensive PASS, test_full_suite PASS).
 RESULT: PASS
 REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM bytecode engine, precise per-pixel collisions, Android device testing.
-NEXT: Continue expanding GML VM bytecode compiler capabilities and GLES rendering pipeline.
+NEXT: Continue expanding GML VM capabilities and GLES rendering pipeline.
 CLAIM_100: no
