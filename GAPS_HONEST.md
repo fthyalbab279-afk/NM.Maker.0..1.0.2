@@ -28,6 +28,7 @@
 5. حلقات التحكم والتكرار ومكتبات GML البرمجية (`while`, `do...until`, `string_digits`, `string_lower`, `string_upper`, `ini_open/read/write`, `collision_circle`, `collision_line`, `collision_rectangle`, `collision_point`).
 6. فك أفعال DnD الشائعة ودوال الحركة (`motion_set`, `motion_add`, `move_towards_point`).
 7. طابور تشغيل الصوت البرمجي وPitch/Pan والربط بـ JNI.
+8. اجتياز جميع اختبارات الوحدات ومحرك النواة عبر `run_engine_suite.py` (PASS).
 
 ---
 
