@@ -290,6 +290,13 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
         if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
         if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
+        if (strcmp(id, "dsin") == 0) { *out = gml_dsin(arg); return true; }
+        if (strcmp(id, "dcos") == 0) { *out = gml_dcos(arg); return true; }
+        if (strcmp(id, "dtan") == 0) { *out = gml_dtan(arg); return true; }
+        if (strcmp(id, "darcsin") == 0) { *out = gml_darcsin(arg); return true; }
+        if (strcmp(id, "darccos") == 0) { *out = gml_darccos(arg); return true; }
+        if (strcmp(id, "darctan") == 0) { *out = gml_darctan(arg); return true; }
+        if (strcmp(id, "string_count") == 0) { *out = gml_string_count((const char *)(uintptr_t)args[0], (const char *)(uintptr_t)args[1]); return true; }
         if (strcmp(id, "point_distance") == 0) {
             *out = gml_point_distance(args[0], args[1], args[2], args[3]); return true;
         }

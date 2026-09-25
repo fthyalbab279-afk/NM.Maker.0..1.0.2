@@ -725,6 +725,122 @@ double gml_string_digits(const char *str, char *out, size_t out_sz) {
     return (double)k;
 }
 
+double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str || count <= 0) return 0;
+    int idx = (int)index - 1; /* GML 1-based */
+    int len = (int)strlen(str);
+    if (idx < 0) { count += idx; idx = 0; }
+    if (idx >= len || count <= 0) return 0;
+    size_t n = (size_t)count;
+    if (idx + n > (size_t)len) n = (size_t)(len - idx);
+    if (n >= out_sz) n = out_sz - 1;
+    memcpy(out, str + idx, n);
+    out[n] = 0;
+    return (double)n;
+}
+
+double gml_string_replace(const char *str, const char *sub, const char *newstr, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    if (!sub || !*sub || !newstr) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
+        return (double)strlen(out);
+    }
+    const char *pos = strstr(str, sub);
+    if (!pos) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
+        return (double)strlen(out);
+    }
+    size_t prefix_len = (size_t)(pos - str);
+    size_t sub_len = strlen(sub);
+    snprintf(out, out_sz, "%.*s%s%s", (int)prefix_len, str, newstr, pos + sub_len);
+    return (double)strlen(out);
+}
+
+double gml_string_replace_all(const char *str, const char *sub, const char *newstr, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    if (!sub || !*sub || !newstr) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
+        return (double)strlen(out);
+    }
+    size_t sub_len = strlen(sub);
+    size_t out_pos = 0;
+    const char *cur = str;
+    while (*cur && out_pos + 1 < out_sz) {
+        const char *pos = strstr(cur, sub);
+        if (!pos) {
+            size_t rem = strlen(cur);
+            if (out_pos + rem >= out_sz) rem = out_sz - 1 - out_pos;
+            memcpy(out + out_pos, cur, rem);
+            out_pos += rem;
+            break;
+        }
+        size_t chunk = (size_t)(pos - cur);
+        if (out_pos + chunk >= out_sz) chunk = out_sz - 1 - out_pos;
+        memcpy(out + out_pos, cur, chunk);
+        out_pos += chunk;
+
+        size_t nlen = strlen(newstr);
+        if (out_pos + nlen >= out_sz) nlen = out_sz - 1 - out_pos;
+        memcpy(out + out_pos, newstr, nlen);
+        out_pos += nlen;
+
+        cur = pos + sub_len;
+    }
+    out[out_pos] = 0;
+    return (double)out_pos;
+}
+
+double gml_string_count(const char *sub, const char *str) {
+    if (!sub || !*sub || !str) return 0;
+    size_t sub_len = strlen(sub);
+    double count = 0;
+    const char *p = str;
+    while ((p = strstr(p, sub)) != NULL) {
+        count += 1.0;
+        p += sub_len;
+    }
+    return count;
+}
+
+double gml_string_delete(const char *str, double index, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    int idx = (int)index - 1; /* GML 1-based */
+    int len = (int)strlen(str);
+    if (idx < 0 || idx >= len || count <= 0) {
+        strncpy(out, str, out_sz - 1);
+        out[out_sz - 1] = 0;
+        return (double)strlen(out);
+    }
+    size_t del_n = (size_t)count;
+    if (idx + del_n > (size_t)len) del_n = (size_t)(len - idx);
+    snprintf(out, out_sz, "%.*s%s", idx, str, str + idx + del_n);
+    return (double)strlen(out);
+}
+
+double gml_string_insert(const char *newstr, const char *str, double index, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    if (!newstr) newstr = "";
+    int idx = (int)index - 1; /* GML 1-based */
+    int len = (int)strlen(str);
+    if (idx < 0) idx = 0;
+    if (idx > len) idx = len;
+    snprintf(out, out_sz, "%.*s%s%s", idx, str, newstr, str + idx);
+    return (double)strlen(out);
+}
+
 double gml_string_lower(const char *str, char *out, size_t out_sz) {
     if (!out || out_sz == 0) return 0;
     out[0] = 0;
@@ -1896,6 +2012,12 @@ double gml_angle_difference(double dest, double src) {
     if (d < -180.0) d += 360.0;
     return d;
 }
+double gml_dsin(double deg) { return sin(deg * M_PI / 180.0); }
+double gml_dcos(double deg) { return cos(deg * M_PI / 180.0); }
+double gml_dtan(double deg) { return tan(deg * M_PI / 180.0); }
+double gml_darcsin(double val) { return asin(val) * 180.0 / M_PI; }
+double gml_darccos(double val) { return acos(val) * 180.0 / M_PI; }
+double gml_darctan(double val) { return atan(val) * 180.0 / M_PI; }
 
 
 static int g_win_w = 640, g_win_h = 480;
