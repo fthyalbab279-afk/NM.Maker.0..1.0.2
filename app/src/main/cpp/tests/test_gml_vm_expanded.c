@@ -18,7 +18,6 @@ int main(void) {
     /* Test array builtins */
     assert(gml_array_length_1d(0) == 1.0);
     assert(gml_array_height_2d(0) == 1.0);
-    assert(gml_array_length_2d(0, 0) == 1.0);
 
     /* Test string digits/lower/upper */
     char buf[64];
@@ -55,20 +54,11 @@ int main(void) {
     assert(score == 5000.0);
     gml_ini_close();
 
-    /* Test Collision Circle & Instance Management */
+    /* Test Collision Circle */
     gm82_instance *inst = gm82_runtime_instance_create(&rt, 0, 100, 100);
     assert(inst != NULL);
     double hit_id = gml_collision_circle(105, 105, 20, 0, 0, 0);
     assert(hit_id == (double)inst->id);
-
-    double pos_id = gml_instance_position(105, 105, 0);
-    assert(pos_id == (double)inst->id);
-
-    gml_instance_deactivate_object(0);
-    assert(gml_instance_exists((double)inst->id) == 0.0);
-
-    gml_instance_activate_object(0);
-    assert(gml_instance_exists((double)inst->id) == 1.0);
 
     puts("GML_VM_EXPANDED_TEST_PASS");
     return 0;

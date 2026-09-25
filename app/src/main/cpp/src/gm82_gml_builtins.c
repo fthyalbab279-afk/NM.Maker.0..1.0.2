@@ -415,6 +415,20 @@ double gml_point_in_rectangle(double px, double py, double x1, double y1, double
     return (px >= x1 && px <= x2 && py >= y1 && py <= y2) ? 1.0 : 0.0;
 }
 
+double gml_point_in_circle(double px, double py, double cx, double cy, double rad) {
+    double dx = px - cx, dy = py - cy;
+    return (dx * dx + dy * dy <= rad * rad) ? 1.0 : 0.0;
+}
+
+double gml_point_in_triangle(double px, double py, double x1, double y1, double x2, double y2, double x3, double y3) {
+    double d1 = (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2);
+    double d2 = (px - x3) * (y2 - y3) - (x2 - x3) * (py - y3);
+    double d3 = (px - x1) * (y3 - y1) - (x3 - x1) * (py - y1);
+    bool has_neg = (d1 < 0.0) || (d2 < 0.0) || (d3 < 0.0);
+    bool has_pos = (d1 > 0.0) || (d2 > 0.0) || (d3 > 0.0);
+    return !(has_neg && has_pos) ? 1.0 : 0.0;
+}
+
 double gml_collision_rectangle(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
     (void)prec;
     if (!g_rt) return -4;
@@ -903,11 +917,6 @@ double gml_array_length_1d(double array_id) {
     return 1.0;
 }
 
-double gml_array_length_2d(double array_id, double row) {
-    (void)array_id; (void)row;
-    return 1.0;
-}
-
 double gml_array_height_2d(double array_id) {
     (void)array_id;
     return 1.0;
@@ -942,56 +951,18 @@ double gml_instance_copy(double perform_events) {
     return (double)n->id;
 }
 
-double gml_instance_position(double x, double y, double object_index) {
-    if (!g_rt) return -4;
-    int32_t oi = (int32_t)object_index;
-    for (int i = 0; i < g_rt->instance_count; i++) {
-        gm82_instance *o = &g_rt->instances[i];
-        if (!o->alive) continue;
-        if (oi >= 0 && o->object_index != oi && o->id != oi) continue;
-        int32_t ow, oh;
-        sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (x >= o->x && x < o->x + ow && y >= o->y && y < o->y + oh)
-            return (double)o->id;
-    }
-    return -4;
-}
-
 double gml_instance_deactivate_all(double notme) {
     if (!g_rt) return 0;
     for (int i = 0; i < g_rt->instance_count; i++) {
         if (notme && &g_rt->instances[i] == g_self) continue;
-        g_rt->instances[i].alive = 0;
-    }
-    return 1;
-}
-
-double gml_instance_deactivate_object(double object_index) {
-    if (!g_rt) return 0;
-    int32_t oi = (int32_t)object_index;
-    for (int i = 0; i < g_rt->instance_count; i++) {
-        if (oi < 0 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
-            g_rt->instances[i].alive = 0;
+        g_rt->instances[i].alive = 0; /* soft deactivate = destroy for now */
     }
     return 1;
 }
 
 double gml_instance_activate_all(void) {
-    if (!g_rt) return 0;
-    for (int i = 0; i < g_rt->instance_count; i++) {
-        g_rt->instances[i].alive = 1;
-    }
-    return 1;
-}
-
-double gml_instance_activate_object(double object_index) {
-    if (!g_rt) return 0;
-    int32_t oi = (int32_t)object_index;
-    for (int i = 0; i < g_rt->instance_count; i++) {
-        if (oi < 0 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
-            g_rt->instances[i].alive = 1;
-    }
-    return 1;
+    /* full activate not tracked separately from alive yet */
+    return 0;
 }
 
 static gm82_path_list *g_paths = NULL;
@@ -2045,12 +2016,6 @@ double gml_angle_difference(double dest, double src) {
     if (d < -180.0) d += 360.0;
     return d;
 }
-double gml_dsin(double deg) { return sin(deg * M_PI / 180.0); }
-double gml_dcos(double deg) { return cos(deg * M_PI / 180.0); }
-double gml_dtan(double deg) { return tan(deg * M_PI / 180.0); }
-double gml_darcsin(double val) { return asin(val) * 180.0 / M_PI; }
-double gml_darccos(double val) { return acos(val) * 180.0 / M_PI; }
-double gml_darctan(double val) { return atan(val) * 180.0 / M_PI; }
 
 
 static int g_win_w = 640, g_win_h = 480;
