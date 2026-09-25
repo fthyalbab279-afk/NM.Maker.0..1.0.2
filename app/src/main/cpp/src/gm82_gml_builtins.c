@@ -418,6 +418,9 @@ double gml_collision_circle(double xc, double yc, double rad, double obj, double
 
         double dx = xc - closest_x;
         double dy = yc - closest_y;
+        double cx = o->x + ow / 2.0;
+        double cy = o->y + oh / 2.0;
+        double dx = cx - xc, dy = cy - yc;
         if (dx * dx + dy * dy <= rad_sq)
             return (double)o->id;
     }
@@ -684,6 +687,131 @@ double gml_string_digits(const char *str, char *out, size_t out_sz) {
     }
     out[k] = 0;
     return (double)k;
+}
+
+double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    int idx = (int)index - 1; /* 1-based in GML */
+    int cnt = (int)count;
+    int len = (int)strlen(str);
+    if (idx < 0) idx = 0;
+    if (idx >= len || cnt <= 0) return 0;
+    if (idx + cnt > len) cnt = len - idx;
+    if ((size_t)cnt >= out_sz) cnt = (int)out_sz - 1;
+    memcpy(out, str + idx, (size_t)cnt);
+    out[cnt] = 0;
+    return (double)cnt;
+}
+
+double gml_string_replace(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    if (!substr || !substr[0]) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    const char *p = strstr(str, substr);
+    if (!p) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    size_t head_len = (size_t)(p - str);
+    const char *rep = newstr ? newstr : "";
+    snprintf(out, out_sz, "%.*s%s%s", (int)head_len, str, rep, p + strlen(substr));
+    return (double)strlen(out);
+}
+
+double gml_string_replace_all(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    if (!substr || !substr[0]) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    const char *rep = newstr ? newstr : "";
+    size_t sub_len = strlen(substr);
+    size_t rep_len = strlen(rep);
+    size_t out_pos = 0;
+    const char *cur = str;
+
+    while (*cur && out_pos + 1 < out_sz) {
+        const char *p = strstr(cur, substr);
+        if (!p) {
+            size_t rem = strlen(cur);
+            if (out_pos + rem >= out_sz) rem = out_sz - out_pos - 1;
+            memcpy(out + out_pos, cur, rem);
+            out_pos += rem;
+            break;
+        }
+        size_t head = (size_t)(p - cur);
+        if (out_pos + head >= out_sz) head = out_sz - out_pos - 1;
+        memcpy(out + out_pos, cur, head);
+        out_pos += head;
+
+        if (out_pos + rep_len >= out_sz) {
+            size_t rrem = out_sz - out_pos - 1;
+            memcpy(out + out_pos, rep, rrem);
+            out_pos += rrem;
+            break;
+        }
+        memcpy(out + out_pos, rep, rep_len);
+        out_pos += rep_len;
+
+        cur = p + sub_len;
+    }
+    out[out_pos] = 0;
+    return (double)out_pos;
+}
+
+double gml_string_count(const char *substr, const char *str) {
+    if (!substr || !substr[0] || !str) return 0;
+    double count = 0;
+    size_t sub_len = strlen(substr);
+    const char *p = str;
+    while ((p = strstr(p, substr)) != NULL) {
+        count += 1.0;
+        p += sub_len;
+    }
+    return count;
+}
+
+double gml_string_delete(const char *str, double index, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    int idx = (int)index - 1; /* 1-based */
+    int cnt = (int)count;
+    int len = (int)strlen(str);
+    if (idx < 0) idx = 0;
+    if (idx >= len || cnt <= 0) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    int del_end = idx + cnt;
+    if (del_end > len) del_end = len;
+
+    size_t head_len = (size_t)idx;
+    size_t tail_len = (size_t)(len - del_end);
+    snprintf(out, out_sz, "%.*s%.*s", (int)head_len, str, (int)tail_len, str + del_end);
+    return (double)strlen(out);
+}
+
+double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) str = "";
+    const char *sub = substr ? substr : "";
+    int idx = (int)index - 1; /* 1-based */
+    int len = (int)strlen(str);
+    if (idx < 0) idx = 0;
+    if (idx > len) idx = len;
+
+    snprintf(out, out_sz, "%.*s%s%s", idx, str, sub, str + idx);
+    return (double)strlen(out);
 }
 
 double gml_string_lower(const char *str, char *out, size_t out_sz) {
@@ -1814,6 +1942,12 @@ double gml_angle_difference(double dest, double src) {
     if (d < -180.0) d += 360.0;
     return d;
 }
+double gml_dsin(double deg) { return sin(deg * M_PI / 180.0); }
+double gml_dcos(double deg) { return cos(deg * M_PI / 180.0); }
+double gml_dtan(double deg) { return tan(deg * M_PI / 180.0); }
+double gml_darcsin(double val) { return asin(val) * 180.0 / M_PI; }
+double gml_darccos(double val) { return acos(val) * 180.0 / M_PI; }
+double gml_darctan(double val) { return atan(val) * 180.0 / M_PI; }
 
 
 static int g_win_w = 640, g_win_h = 480;
