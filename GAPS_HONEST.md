@@ -25,9 +25,12 @@
 2. Soft rendering وإظهار أول إطار بدون شاشة سوداء (`nonzero_pixels > 1000`).
 3. تجربة 4 ألعاب بـ 10 خطوات بدون انهيار (Smoke 4/4 PASS).
 4. محاكاة حركة ماريو 100 إطار مع الجاذبية والمنصات وتتبع الكاميرا (`MARIO_PLAYABLE_PASS_HOST`).
+5. حلقات التحكم والتكرار ومكتبات GML البرمجية (`while`, `do...until`, `string_digits`, `string_lower`, `string_upper`, `ini_open/read/write`, `collision_circle`, `collision_line`, `collision_rectangle`, `collision_point`).
+6. فك أفعال DnD الشائعة وتطبيقها على الكائنات.
 5. حلقات التحكم والتكرار ومكتبات GML البرمجية (`while`, `do...until`, `string_digits`, `string_lower`, `string_upper`, `ini_open/read/write`, `collision_circle`, `collision_line`, `collision_rectangle`, `collision_point`, `collision_ellipse`, `point_in_rectangle`, `point_in_circle`, `point_in_triangle`).
 6. فك أفعال DnD الشائعة ودوال الحركة (`motion_set`, `motion_add`, `move_towards_point`).
 7. طابور تشغيل الصوت البرمجي وPitch/Pan والربط بـ JNI.
+8. اجتياز جميع اختبارات الوحدات ومحرك النواة عبر `run_engine_suite.py` (PASS).
 
 ---
 

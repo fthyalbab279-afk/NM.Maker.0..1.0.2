@@ -36,5 +36,5 @@ DONE: Implemented gml_collision_ellipse, updated test_collision_functions, and v
 TEST: Native C unit tests passing (test_gml_ds_collisions PASS, test_gml_vm_expanded PASS, test_gml_comprehensive PASS, test_full_suite PASS).
 RESULT: PASS
 REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM bytecode engine, precise per-pixel collisions, Android device testing.
-NEXT: Continue expanding GML VM bytecode compiler capabilities and GLES rendering pipeline.
+NEXT: Continue expanding GML VM capabilities and GLES rendering pipeline.
 CLAIM_100: no
