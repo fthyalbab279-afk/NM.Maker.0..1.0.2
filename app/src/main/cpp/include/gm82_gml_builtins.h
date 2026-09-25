@@ -246,7 +246,6 @@ double gml_real(const char *s);
 double gml_string_pos(const char *sub, const char *str);
 double gml_string_char_at(const char *str, double index);
 double gml_string_digits(const char *str, char *out, size_t out_sz);
-double gml_string_letters(const char *str, char *out, size_t out_sz);
 double gml_string_lower(const char *str, char *out, size_t out_sz);
 double gml_string_upper(const char *str, char *out, size_t out_sz);
 double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz);
@@ -327,12 +326,6 @@ double gml_sound_isplaying(double sound_index);
 
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);
-double gml_sqr(double v);
-double gml_frac(double v);
-double gml_exp(double v);
-double gml_log2(double v);
-double gml_log10(double v);
-double gml_logn(double base, double v);
 double gml_sign(double v);
 double gml_clamp(double v, double lo, double hi);
 double gml_lerp(double a, double b, double t);

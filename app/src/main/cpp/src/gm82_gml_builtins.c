@@ -180,6 +180,35 @@ double gml_instance_place(double x, double y, double object_index) {
     return -4;
 }
 
+double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
+    (void)prec;
+    if (!g_rt) return -4;
+    if (x1 > x2) { double t = x1; x1 = x2; x2 = t; }
+    if (y1 > y2) { double t = y1; y1 = y2; y2 = t; }
+    double cx = (x1 + x2) / 2.0;
+    double cy = (y1 + y2) / 2.0;
+    double rx = (x2 - x1) / 2.0;
+    double ry = (y2 - y1) / 2.0;
+    if (rx <= 0) rx = 0.001;
+    if (ry <= 0) ry = 0.001;
+    int32_t oi = (int32_t)obj;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        double px = cx < o->x ? o->x : (cx > o->x + ow ? o->x + ow : cx);
+        double py = cy < o->y ? o->y : (cy > o->y + oh ? o->y + oh : cy);
+        double dx = (px - cx) / rx;
+        double dy = (py - cy) / ry;
+        if (dx * dx + dy * dy <= 1.0)
+            return (double)o->id;
+    }
+    return -4;
+}
+
 void gm82_draw_set_target(uint8_t *rgba, int32_t w, int32_t h) {
     g_draw_buf = rgba; g_draw_w = w; g_draw_h = h;
 }

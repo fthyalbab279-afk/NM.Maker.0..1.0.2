@@ -6,7 +6,7 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
-last_test_log: "GML point-in-geometry builtins (gml_point_in_rectangle, gml_point_in_circle, gml_point_in_triangle), motion functions, and line collision algorithm tested PASS in test_gml_ds_collisions.c."
+last_test_log: "GML ellipse collision builtin gml_collision_ellipse, point-in-geometry builtins, motion functions, and line collisions tested PASS in test_gml_ds_collisions.c."
 last_run_date: 2026-09-24
 
 ## rules (لا تُكسر)
@@ -32,7 +32,7 @@ Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/a
 
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Implemented gml_point_in_circle and gml_point_in_triangle, added test_point_in_geometry_functions, and verified test_gml_ds_collisions PASS.
+DONE: Implemented gml_collision_ellipse, updated test_collision_functions, and verified test_gml_ds_collisions PASS.
 TEST: Native C unit tests passing (test_gml_ds_collisions PASS, test_gml_vm_expanded PASS, test_gml_comprehensive PASS, test_full_suite PASS).
 RESULT: PASS
 REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM bytecode engine, precise per-pixel collisions, Android device testing.
