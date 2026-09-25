@@ -188,11 +188,13 @@ bool gm82_action_execute_named(gm82_runtime *rt, gm82_instance *self, const char
     if (strcmp(name, "action_set_hspeed") == 0) return true;
     if (strcmp(name, "action_set_vspeed") == 0) return true;
     if (strcmp(name, "action_set_gravity") == 0) return true;
-    if (strcmp(name, "action_set_health") == 0) return true;
+    if (strcmp(name, "action_set_score") == 0) { gml_set_score(0); return true; }
+    if (strcmp(name, "action_set_lives") == 0) { gml_set_lives(3); return true; }
+    if (strcmp(name, "action_set_health") == 0) { gml_set_health(100); return true; }
     if (strcmp(name, "action_sound") == 0) return true; /* no audio backend yet */
     if (strcmp(name, "action_end_sound") == 0) return true;
-    if (strcmp(name, "action_restart_game") == 0) { rt->running = 0; return true; }
-    if (strcmp(name, "action_end_game") == 0) { rt->running = 0; return true; }
+    if (strcmp(name, "action_restart_game") == 0) { gml_game_restart(); return true; }
+    if (strcmp(name, "action_end_game") == 0) { gml_game_end(); return true; }
     if (strcmp(name, "action_bounce") == 0) {
         if (self->vspeed*self->vspeed >= self->hspeed*self->hspeed)
             self->vspeed = -self->vspeed;
@@ -238,21 +240,6 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     if (strcmp(ar->name, "action_bounce") == 0) {
         if (ar->action_id == 0) self->hspeed = -self->hspeed;
         else self->vspeed = -self->vspeed;
-        return true;
-    }
-    if (strcmp(ar->name, "action_set_score") == 0) {
-        if (ar->kind != 0) gml_set_score(gml_get_score() + ar->action_id);
-        else gml_set_score((double)ar->action_id);
-        return true;
-    }
-    if (strcmp(ar->name, "action_set_lives") == 0) {
-        if (ar->kind != 0) gml_set_lives(gml_get_lives() + ar->action_id);
-        else gml_set_lives((double)ar->action_id);
-        return true;
-    }
-    if (strcmp(ar->name, "action_set_health") == 0) {
-        if (ar->kind != 0) gml_set_health(gml_get_health() + ar->action_id);
-        else gml_set_health((double)ar->action_id);
         return true;
     }
     if (strcmp(ar->name, "action_set_gravity") == 0) {
@@ -320,6 +307,43 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     if (strcmp(ar->name, "action_create_object") == 0) {
         int oi = ar->action_id;
         gm82_runtime_instance_create(rt, oi, self->x, self->y);
+        return true;
+    }
+    if (strcmp(ar->name, "action_create_object_motion") == 0) {
+        int oi = ar->action_id;
+        gm82_instance *inst = gm82_runtime_instance_create(rt, oi, self->x, self->y);
+        if (inst) {
+            double spd = (double)ar->kind;
+            double dir = 0;
+            gm82_gml_set_self(inst);
+            gml_motion_set(dir, spd);
+            gm82_gml_set_self(self);
+        }
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_score") == 0) {
+        gml_set_score((double)ar->action_id);
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_lives") == 0) {
+        gml_set_lives((double)ar->action_id);
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_health") == 0) {
+        gml_set_health((double)ar->action_id);
+        return true;
+    }
+    if (strcmp(ar->name, "action_restart_game") == 0) {
+        gml_game_restart();
+        return true;
+    }
+    if (strcmp(ar->name, "action_end_game") == 0) {
+        gml_game_end();
+        return true;
+    }
+    if (strcmp(ar->name, "action_previous_room") == 0) {
+        if (rt->rooms && rt->current_room > 0)
+            gm82_runtime_goto_room(rt, rt->current_room - 1);
         return true;
     }
     return false;

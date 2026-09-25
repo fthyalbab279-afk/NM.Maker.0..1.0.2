@@ -124,12 +124,6 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "room_width") == 0) { *out = p->rt ? (double)p->rt->room_width : 0; return true; }
     if (strcmp(name, "room_height") == 0) { *out = p->rt ? (double)p->rt->room_height : 0; return true; }
     if (strcmp(name, "room_speed") == 0) { *out = p->rt ? (double)p->rt->room_speed : 30; return true; }
-    if (strcmp(name, "view_xview") == 0) { *out = p->rt ? p->rt->view_x : 0; return true; }
-    if (strcmp(name, "view_yview") == 0) { *out = p->rt ? p->rt->view_y : 0; return true; }
-    if (strcmp(name, "view_wview") == 0) { *out = p->rt ? (p->rt->view_w > 0 ? p->rt->view_w : p->rt->room_width) : 640; return true; }
-    if (strcmp(name, "view_hview") == 0) { *out = p->rt ? (p->rt->view_h > 0 ? p->rt->view_h : p->rt->room_height) : 480; return true; }
-    if (strcmp(name, "view_enabled") == 0) { *out = p->rt ? (double)p->rt->view_enabled : 0; return true; }
-    if (strcmp(name, "view_current") == 0) { *out = 0.0; return true; }
     if (strcmp(name, "mouse_x") == 0) { *out = gml_mouse_x(); return true; }
     if (strcmp(name, "mouse_y") == 0) { *out = gml_mouse_y(); return true; }
     /* vk_ constants (GM key codes) */
@@ -200,11 +194,6 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "image_yscale") == 0) { s->image_yscale = v; return true; }
     if (strcmp(name, "sprite_index") == 0) { s->sprite_index = (int32_t)v; return true; }
     if (strcmp(name, "solid") == 0) { s->solid = v != 0; return true; }
-    if (strcmp(name, "view_xview") == 0) { if (p->rt) p->rt->view_x = v; return true; }
-    if (strcmp(name, "view_yview") == 0) { if (p->rt) p->rt->view_y = v; return true; }
-    if (strcmp(name, "view_wview") == 0) { if (p->rt) p->rt->view_w = v; return true; }
-    if (strcmp(name, "view_hview") == 0) { if (p->rt) p->rt->view_h = v; return true; }
-    if (strcmp(name, "view_enabled") == 0) { if (p->rt) p->rt->view_enabled = (v != 0); return true; }
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
     if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }

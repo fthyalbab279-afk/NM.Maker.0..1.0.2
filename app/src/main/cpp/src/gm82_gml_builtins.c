@@ -446,6 +446,9 @@ double gml_collision_circle(double xc, double yc, double rad, double obj, double
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        double cx = o->x + ow / 2.0;
+        double cy = o->y + oh / 2.0;
+        double dx = cx - xc, dy = cy - yc;
 
         double closest_x = xc;
         if (closest_x < o->x) closest_x = o->x;
