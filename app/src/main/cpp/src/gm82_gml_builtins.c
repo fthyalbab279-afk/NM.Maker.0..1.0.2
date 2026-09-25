@@ -843,6 +843,11 @@ double gml_array_length_1d(double array_id) {
     return 1.0;
 }
 
+double gml_array_length_2d(double array_id, double row) {
+    (void)array_id; (void)row;
+    return 1.0;
+}
+
 double gml_array_height_2d(double array_id) {
     (void)array_id;
     return 1.0;
@@ -877,18 +882,56 @@ double gml_instance_copy(double perform_events) {
     return (double)n->id;
 }
 
+double gml_instance_position(double x, double y, double object_index) {
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)object_index;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (oi >= 0 && o->object_index != oi && o->id != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        if (x >= o->x && x < o->x + ow && y >= o->y && y < o->y + oh)
+            return (double)o->id;
+    }
+    return -4;
+}
+
 double gml_instance_deactivate_all(double notme) {
     if (!g_rt) return 0;
     for (int i = 0; i < g_rt->instance_count; i++) {
         if (notme && &g_rt->instances[i] == g_self) continue;
-        g_rt->instances[i].alive = 0; /* soft deactivate = destroy for now */
+        g_rt->instances[i].alive = 0;
+    }
+    return 1;
+}
+
+double gml_instance_deactivate_object(double object_index) {
+    if (!g_rt) return 0;
+    int32_t oi = (int32_t)object_index;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        if (oi < 0 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
+            g_rt->instances[i].alive = 0;
     }
     return 1;
 }
 
 double gml_instance_activate_all(void) {
-    /* full activate not tracked separately from alive yet */
-    return 0;
+    if (!g_rt) return 0;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        g_rt->instances[i].alive = 1;
+    }
+    return 1;
+}
+
+double gml_instance_activate_object(double object_index) {
+    if (!g_rt) return 0;
+    int32_t oi = (int32_t)object_index;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        if (oi < 0 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
+            g_rt->instances[i].alive = 1;
+    }
+    return 1;
 }
 
 static gm82_path_list *g_paths = NULL;
