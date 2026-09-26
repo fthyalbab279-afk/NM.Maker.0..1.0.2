@@ -6,8 +6,8 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
-last_test_log: "GML ellipse collision builtin gml_collision_ellipse, point-in-geometry builtins, motion functions, and line collisions tested PASS in test_gml_ds_collisions.c."
-last_run_date: 2026-09-24
+last_test_log: "Fixed gml_collision_ellipse header declaration; verified test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, and test_gml_ds_collisions via run_engine_suite.py ALL PASS."
+last_run_date: 2026-09-26
 
 ## rules (لا تُكسر)
 - never claim 100%
