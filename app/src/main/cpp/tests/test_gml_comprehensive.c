@@ -52,6 +52,15 @@ int main(void) {
     /* Test math functions */
     assert(gml_lerp(0.0, 100.0, 0.5) == 50.0);
     assert(gml_clamp(150.0, 0.0, 100.0) == 100.0);
+    assert(gml_median(10.0, 50.0, 30.0) == 30.0);
+    assert(gml_median(-5.0, 100.0, 0.0) == 0.0);
+
+    /* Test evaluation of clamp and median in GML VM statements/expressions */
+    double res = 0;
+    gm82_gml_eval_expr(&rt, inst, "clamp(120, 0, 100)", &res);
+    assert(res == 100.0);
+    gm82_gml_eval_expr(&rt, inst, "median(50, 10, 30)", &res);
+    assert(res == 30.0);
 
     /* Test degree trigonometric functions */
     assert(gml_abs(gml_dsin(90.0) - 1.0) < 1e-6);

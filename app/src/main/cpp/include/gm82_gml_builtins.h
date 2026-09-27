@@ -209,6 +209,7 @@ double gml_point_distance(double x1, double y1, double x2, double y2);
 double gml_point_direction(double x1, double y1, double x2, double y2);
 double gml_lerp(double a, double b, double amount);
 double gml_clamp(double val, double minv, double maxv);
+double gml_median(double a, double b, double c);
 double gml_deg_to_rad(double deg);
 double gml_rad_to_deg(double rad);
 double gml_angle_difference(double dest, double src);
@@ -335,6 +336,7 @@ double gml_sound_isplaying(double sound_index);
 /* ---- Math helpers common in GML ---- */
 double gml_abs(double v);
 double gml_sign(double v);
+double gml_median(double a, double b, double c);
 double gml_clamp(double v, double lo, double hi);
 double gml_lerp(double a, double b, double t);
 double gml_irandom(double n);
