@@ -279,6 +279,16 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
         if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
         if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
+        if (strcmp(id, "clamp") == 0) {
+            double lo = (nargs >= 2) ? args[1] : 0;
+            double hi = (nargs >= 3) ? args[2] : 0;
+            *out = gml_clamp(arg, lo, hi); return true;
+        }
+        if (strcmp(id, "median") == 0) {
+            double b = (nargs >= 2) ? args[1] : 0;
+            double c = (nargs >= 3) ? args[2] : 0;
+            *out = gml_median(arg, b, c); return true;
+        }
         if (strcmp(id, "keyboard_check") == 0) {
             *out = gml_keyboard_check(arg); return true;
         }

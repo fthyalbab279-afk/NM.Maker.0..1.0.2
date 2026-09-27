@@ -307,6 +307,11 @@ double gml_clamp(double v, double lo, double hi) {
     if (v > hi) return hi;
     return v;
 }
+double gml_median(double a, double b, double c) {
+    if ((a >= b && a <= c) || (a >= c && a <= b)) return a;
+    if ((b >= a && b <= c) || (b >= c && b <= a)) return b;
+    return c;
+}
 double gml_lerp(double a, double b, double t) { return a + (b - a) * t; }
 double gml_irandom(double n) {
     if (n <= 0) return 0;
