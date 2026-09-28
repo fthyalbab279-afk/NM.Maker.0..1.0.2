@@ -258,13 +258,13 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (v == 0) ? 1 : 0;
         return true;
     }
-    /* function call? collect up to 4 args */
+    /* function call? collect up to 8 args */
     if (match(p, '(')) {
-        double args[4] = {0,0,0,0};
+        double args[8] = {0,0,0,0,0,0,0,0};
         int nargs = 0;
         if (peek(p) != ')') {
             for (;;) {
-                if (nargs >= 4) return false;
+                if (nargs >= 8) return false;
                 if (!parse_expr(p, &args[nargs])) return false;
                 nargs++;
                 if (peek(p) != ',') break;
@@ -279,6 +279,9 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
         if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
         if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
+        if (strcmp(id, "sqr") == 0) { *out = arg * arg; return true; }
+        if (strcmp(id, "frac") == 0) { *out = arg - floor(arg); return true; }
+        if (strcmp(id, "exp") == 0) { *out = exp(arg); return true; }
         if (strcmp(id, "clamp") == 0) {
             double lo = (nargs >= 2) ? args[1] : 0;
             double hi = (nargs >= 3) ? args[2] : 0;
@@ -288,6 +291,44 @@ static bool parse_primary(gml_parser *p, double *out) {
             double b = (nargs >= 2) ? args[1] : 0;
             double c = (nargs >= 3) ? args[2] : 0;
             *out = gml_median(arg, b, c); return true;
+        }
+        if (strcmp(id, "mean") == 0) {
+            if (nargs == 0) { *out = 0; return true; }
+            double sum = 0;
+            for (int k = 0; k < nargs; k++) sum += args[k];
+            *out = sum / nargs; return true;
+        }
+        if (strcmp(id, "point_distance") == 0) {
+            double x1 = args[0], y1 = args[1], x2 = args[2], y2 = args[3];
+            *out = gml_point_distance(x1, y1, x2, y2); return true;
+        }
+        if (strcmp(id, "point_direction") == 0) {
+            double x1 = args[0], y1 = args[1], x2 = args[2], y2 = args[3];
+            *out = gml_point_direction(x1, y1, x2, y2); return true;
+        }
+        if (strcmp(id, "lengthdir_x") == 0) {
+            *out = gml_lengthdir_x(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "lengthdir_y") == 0) {
+            *out = gml_lengthdir_y(args[0], args[1]); return true;
+        }
+        if (strcmp(id, "point_in_rectangle") == 0) {
+            *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "collision_rectangle") == 0) {
+            *out = gml_collision_rectangle(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return true;
+        }
+        if (strcmp(id, "collision_circle") == 0) {
+            *out = gml_collision_circle(args[0], args[1], args[2], args[3], args[4], args[5]); return true;
+        }
+        if (strcmp(id, "collision_ellipse") == 0) {
+            *out = gml_collision_ellipse(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return true;
+        }
+        if (strcmp(id, "collision_line") == 0) {
+            *out = gml_collision_line(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return true;
+        }
+        if (strcmp(id, "collision_point") == 0) {
+            *out = gml_collision_point(args[0], args[1], args[2], args[3], args[4]); return true;
         }
         if (strcmp(id, "keyboard_check") == 0) {
             *out = gml_keyboard_check(arg); return true;

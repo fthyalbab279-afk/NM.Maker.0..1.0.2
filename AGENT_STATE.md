@@ -6,7 +6,7 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
-last_test_log: "Implemented gml_median in builtins and eval, updated test_gml_comprehensive, and verified test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, and test_gml_ds_collisions ALL PASS."
+last_test_log: "Expanded parse_primary argument buffer to 8 params in gm82_gml_eval.c, bound spatial collision and geometry builtins, updated test_gml_comprehensive, and verified test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, and test_gml_ds_collisions ALL PASS."
 last_run_date: 2026-09-27
 
 ## rules (لا تُكسر)
@@ -32,7 +32,7 @@ Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/a
 
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Implemented gml_median in gm82_gml_builtins.c and gm82_gml_eval.c, added unit tests in test_gml_comprehensive.c, and verified test suite pass.
+DONE: Expanded parse_primary function evaluation to 8 parameters in gm82_gml_eval.c, bound spatial collisions and geometry built-ins, added unit tests in test_gml_comprehensive.c, and verified test suite pass.
 TEST: Native C unit tests passing (test_gml_comprehensive PASS, test_gml_ds_collisions PASS, test_gml_vm_expanded PASS, test_full_suite PASS, test_dual_load PASS).
 RESULT: PASS
 REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM bytecode engine, precise per-pixel collisions, Android device testing.
