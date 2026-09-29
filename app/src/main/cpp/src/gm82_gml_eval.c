@@ -258,6 +258,13 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (v == 0) ? 1 : 0;
         return true;
     }
+    /* function call? collect up to 16 args */
+    if (match(p, '(')) {
+        double args[16] = {0};
+        int nargs = 0;
+        if (peek(p) != ')') {
+            for (;;) {
+                if (nargs >= 16) return false;
     /* function call? collect up to 8 args */
     if (match(p, '(')) {
         double args[8] = {0,0,0,0,0,0,0,0};
@@ -273,6 +280,17 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (!match(p, ')')) return false;
         double arg = args[0];
+        if (strcmp(id, "make_color_rgb") == 0) { *out = gml_make_color_rgb(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "make_color_hsv") == 0) { *out = gml_make_color_hsv(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "color_get_red") == 0) { *out = gml_color_get_red(arg); return true; }
+        if (strcmp(id, "color_get_green") == 0) { *out = gml_color_get_green(arg); return true; }
+        if (strcmp(id, "color_get_blue") == 0) { *out = gml_color_get_blue(arg); return true; }
+        if (strcmp(id, "color_get_hue") == 0) { *out = gml_color_get_hue(arg); return true; }
+        if (strcmp(id, "color_get_saturation") == 0) { *out = gml_color_get_saturation(arg); return true; }
+        if (strcmp(id, "color_get_value") == 0) { *out = gml_color_get_value(arg); return true; }
+        if (strcmp(id, "motion_set") == 0) { gml_motion_set(args[0], args[1]); *out = 1; return true; }
+        if (strcmp(id, "motion_add") == 0) { gml_motion_add(args[0], args[1]); *out = 1; return true; }
+        if (strcmp(id, "move_towards_point") == 0) { gml_move_towards_point(args[0], args[1], args[2]); *out = 1; return true; }
         if (strcmp(id, "abs") == 0) { *out = fabs(arg); return true; }
         if (strcmp(id, "sign") == 0) { *out = arg > 0 ? 1 : (arg < 0 ? -1 : 0); return true; }
         if (strcmp(id, "irandom") == 0) { *out = (double)(rand() % ((int)arg + 1)); return true; }
@@ -354,6 +372,54 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "place_empty") == 0) {
             double yarg = (nargs >= 2) ? args[1] : (p->self ? p->self->y : 0);
             *out = gml_place_empty(arg, yarg); return true;
+        }
+        if (strcmp(id, "collision_rectangle") == 0) {
+            *out = gml_collision_rectangle(args[0], args[1], args[2], args[3], (nargs>=5)?args[4]:-1, (nargs>=6)?args[5]:0, (nargs>=7)?args[6]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_circle") == 0) {
+            *out = gml_collision_circle(args[0], args[1], args[2], (nargs>=4)?args[3]:-1, (nargs>=5)?args[4]:0, (nargs>=6)?args[5]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_ellipse") == 0) {
+            *out = gml_collision_ellipse(args[0], args[1], args[2], args[3], (nargs>=5)?args[4]:-1, (nargs>=6)?args[5]:0, (nargs>=7)?args[6]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_line") == 0) {
+            *out = gml_collision_line(args[0], args[1], args[2], args[3], (nargs>=5)?args[4]:-1, (nargs>=6)?args[5]:0, (nargs>=7)?args[6]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_point") == 0) {
+            *out = gml_collision_point(args[0], args[1], (nargs>=3)?args[2]:-1, (nargs>=4)?args[3]:0, (nargs>=5)?args[4]:0);
+            return true;
+        }
+        if (strcmp(id, "point_in_rectangle") == 0) {
+            *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]);
+            return true;
+        }
+        if (strcmp(id, "point_distance") == 0) {
+            *out = gml_point_distance(args[0], args[1], args[2], args[3]);
+            return true;
+        }
+        if (strcmp(id, "point_direction") == 0) {
+            *out = gml_point_direction(args[0], args[1], args[2], args[3]);
+            return true;
+        }
+        if (strcmp(id, "lengthdir_x") == 0) {
+            *out = gml_lengthdir_x(args[0], args[1]);
+            return true;
+        }
+        if (strcmp(id, "lengthdir_y") == 0) {
+            *out = gml_lengthdir_y(args[0], args[1]);
+            return true;
+        }
+        if (strcmp(id, "instance_destroy") == 0) {
+            gml_instance_destroy();
+            *out = 1; return true;
+        }
+        if (strcmp(id, "instance_nearest") == 0) {
+            *out = gml_instance_nearest(args[0], args[1], (nargs>=3)?args[2]:-1);
+            return true;
         }
         if (strcmp(id, "instance_number") == 0) {
             *out = gml_instance_number(arg); return true;

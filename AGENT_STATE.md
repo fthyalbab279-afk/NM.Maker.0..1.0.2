@@ -6,8 +6,8 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
-last_test_log: "Implemented string_letters and string_repeat in gm82_gml_builtins.c, updated test_gml_comprehensive, and verified test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, and test_gml_ds_collisions ALL PASS."
-last_run_date: 2026-09-27
+last_test_log: "Added test_4_game_smoke.c and test_mario_physics_parity.c into test suite. Verified all 9 native host test suites (test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_4_game_smoke, test_mario_physics_parity) ALL PASS via run_engine_suite.py."
+last_run_date: 2026-09-29
 
 ## rules (لا تُكسر)
 - never claim 100%
@@ -17,24 +17,13 @@ last_run_date: 2026-09-27
 
 ## progress reality
 Relative to complete Windows GameMaker 8.2 parity, native engine progress is estimated at ~48% (<50%).
-Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), sound controls, and spatial collisions work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
+Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), sound controls, spatial collisions, 4-game GMK smoke test (mario_bros, plataformas, shooter, zelda), and Mario host physics parity work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
 
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Cleaned up duplicate function definitions, updated unit test suites (dual_load, ds_collisions), and verified engine test runner run_engine_suite.py.
-TEST: Native C test suites passing (test_full_suite, test_dual_load, test_gml_comprehensive, test_gml_ds_collisions, test_gml_vm_execution, test_gml_vm_expanded, test_runtime_guard ALL PASS).
-Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), and spatial collisions (collision_point, collision_rectangle, collision_circle, collision_line) work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
-
-## required_reply_format
-PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Implemented gml_collision_line, expanded collision suite (point, rectangle, circle, line), fixed test_gml_ds_collisions compilation and sound runtime pan duplicate definition.
-Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/array libraries, INI file I/O, bounding boxes, data structures (ds_list, ds_map), motion helpers (motion_set, motion_add, move_towards_point), point geometry (point_in_rectangle, point_in_circle, point_in_triangle), and spatial collisions (collision_point, collision_rectangle, collision_circle, collision_line) work on host, but hardware GLES, OpenSL ES audio, complete GML VM bytecode compiler, per-pixel collisions, particles, and full IDE parity remain incomplete.
-
-## required_reply_format
-PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Implemented gml_string_letters and gml_string_repeat in gm82_gml_builtins.c, added unit tests in test_gml_comprehensive.c, and verified test suite pass.
-TEST: Native C unit tests passing (test_gml_comprehensive PASS, test_gml_ds_collisions PASS, test_gml_vm_expanded PASS, test_full_suite PASS, test_dual_load PASS).
+DONE: Added test_4_game_smoke.c (Phase 2.5 PASS) and test_mario_physics_parity.c (Phase 3.6 MARIO_PLAYABLE_PASS_HOST) to native test suite and updated run_engine_suite.py runner.
+TEST: All 9 native C host test suites passing (test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_4_game_smoke, test_mario_physics_parity ALL PASS).
 RESULT: PASS
-REMAINING: GLES Hardware Rendering, OpenSL Audio, full GML VM bytecode engine, precise per-pixel collisions, Android device testing.
-NEXT: Continue expanding GML VM capabilities and GLES rendering pipeline.
+REMAINING: GLES Hardware Rendering, OpenSL ES Audio Backend, full GML VM bytecode compiler, precise per-pixel collisions, Android device hardware testing.
+NEXT: Continue advancing Phase 4/5 audio and GML bytecode capabilities.
 CLAIM_100: no
