@@ -1,6 +1,6 @@
 # NOR Maker – ما يوجد فعلاً vs ما ناقص (مقارنة صادقة مع ويندوز GM82)
 
-تاريخ التحديث: 2026-09-27
+تاريخ التحديث: 2026-09-29
 النسبة الحقيقية مقارنة بـ Windows GM82 الكامل: **~48% (أقل من 50%)**
 
 ---
@@ -19,18 +19,16 @@
 
 ---
 
-## ✅ ما تم إنجازه واختباره على المضيف (Host Prototype)
+## ✅ ما تم إنجازه وااختباره على المضيف (Host Prototype)
 
 1. فك ملفات GMK وإعادة بناء الموارد في الذاكرة (`mario_bros`, `plataformas`, `shooter`, `zelda`).
 2. Soft rendering وإظهار أول إطار بدون شاشة سوداء (`nonzero_pixels > 1000`).
-3. تجربة 4 ألعاب بـ 10 خطوات بدون انهيار (Smoke 4/4 PASS).
-4. محاكاة حركة ماريو 100 إطار مع الجاذبية والمنصات وتتبع الكاميرا (`MARIO_PLAYABLE_PASS_HOST`).
-5. حلقات التحكم والتكرار ومكتبات GML البرمجية (`while`, `do...until`, `string_digits`, `string_lower`, `string_upper`, `ini_open/read/write`, `collision_circle`, `collision_line`, `collision_rectangle`, `collision_point`).
-6. فك أفعال DnD الشائعة وتطبيقها على الكائنات.
+3. تجربة 4 ألعاب بـ 10 خطوات بدون انهيار (Smoke 4/4 PASS عبر `test_4_game_smoke.c`).
+4. محاكاة حركة ماريو 90 إطار مع الجاذبية ومدخلات المفاتيح وتتبع الكاميرا (`MARIO_PLAYABLE_PASS_HOST` عبر `test_mario_physics_parity.c`).
 5. حلقات التحكم والتكرار ومكتبات GML البرمجية (`while`, `do...until`, `string_digits`, `string_lower`, `string_upper`, `ini_open/read/write`, `clamp`, `median`, `mean`, `sqr`, `point_distance`, `collision_circle`, `collision_line`, `collision_rectangle`, `collision_point`, `collision_ellipse`, `point_in_rectangle`, `point_in_circle`, `point_in_triangle`).
 6. فك أفعال DnD الشائعة ودوال الحركة (`motion_set`, `motion_add`, `move_towards_point`).
 7. طابور تشغيل الصوت البرمجي وPitch/Pan والربط بـ JNI.
-8. اجتياز جميع اختبارات الوحدات ومحرك النواة عبر `run_engine_suite.py` (PASS).
+8. اجتياز جميع اختبارات الوحدات التسعة ومحرك النواة عبر `run_engine_suite.py` (ALL PASS).
 
 ---
 
