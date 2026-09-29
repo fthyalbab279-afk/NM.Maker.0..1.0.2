@@ -258,13 +258,13 @@ static bool parse_primary(gml_parser *p, double *out) {
         *out = (v == 0) ? 1 : 0;
         return true;
     }
-    /* function call? collect up to 4 args */
+    /* function call? collect up to 16 args */
     if (match(p, '(')) {
-        double args[4] = {0,0,0,0};
+        double args[16] = {0};
         int nargs = 0;
         if (peek(p) != ')') {
             for (;;) {
-                if (nargs >= 4) return false;
+                if (nargs >= 16) return false;
                 if (!parse_expr(p, &args[nargs])) return false;
                 nargs++;
                 if (peek(p) != ',') break;
@@ -313,6 +313,54 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "place_empty") == 0) {
             double yarg = (nargs >= 2) ? args[1] : (p->self ? p->self->y : 0);
             *out = gml_place_empty(arg, yarg); return true;
+        }
+        if (strcmp(id, "collision_rectangle") == 0) {
+            *out = gml_collision_rectangle(args[0], args[1], args[2], args[3], (nargs>=5)?args[4]:-1, (nargs>=6)?args[5]:0, (nargs>=7)?args[6]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_circle") == 0) {
+            *out = gml_collision_circle(args[0], args[1], args[2], (nargs>=4)?args[3]:-1, (nargs>=5)?args[4]:0, (nargs>=6)?args[5]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_ellipse") == 0) {
+            *out = gml_collision_ellipse(args[0], args[1], args[2], args[3], (nargs>=5)?args[4]:-1, (nargs>=6)?args[5]:0, (nargs>=7)?args[6]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_line") == 0) {
+            *out = gml_collision_line(args[0], args[1], args[2], args[3], (nargs>=5)?args[4]:-1, (nargs>=6)?args[5]:0, (nargs>=7)?args[6]:0);
+            return true;
+        }
+        if (strcmp(id, "collision_point") == 0) {
+            *out = gml_collision_point(args[0], args[1], (nargs>=3)?args[2]:-1, (nargs>=4)?args[3]:0, (nargs>=5)?args[4]:0);
+            return true;
+        }
+        if (strcmp(id, "point_in_rectangle") == 0) {
+            *out = gml_point_in_rectangle(args[0], args[1], args[2], args[3], args[4], args[5]);
+            return true;
+        }
+        if (strcmp(id, "point_distance") == 0) {
+            *out = gml_point_distance(args[0], args[1], args[2], args[3]);
+            return true;
+        }
+        if (strcmp(id, "point_direction") == 0) {
+            *out = gml_point_direction(args[0], args[1], args[2], args[3]);
+            return true;
+        }
+        if (strcmp(id, "lengthdir_x") == 0) {
+            *out = gml_lengthdir_x(args[0], args[1]);
+            return true;
+        }
+        if (strcmp(id, "lengthdir_y") == 0) {
+            *out = gml_lengthdir_y(args[0], args[1]);
+            return true;
+        }
+        if (strcmp(id, "instance_destroy") == 0) {
+            gml_instance_destroy();
+            *out = 1; return true;
+        }
+        if (strcmp(id, "instance_nearest") == 0) {
+            *out = gml_instance_nearest(args[0], args[1], (nargs>=3)?args[2]:-1);
+            return true;
         }
         if (strcmp(id, "instance_number") == 0) {
             *out = gml_instance_number(arg); return true;
