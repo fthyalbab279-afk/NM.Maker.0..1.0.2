@@ -30,6 +30,23 @@ int main(void) {
     gml_string_upper("world", buf, sizeof(buf));
     assert(strcmp(buf, "WORLD") == 0);
 
+    gml_string_letters("A1!B2@C3#", buf, sizeof(buf));
+    assert(strcmp(buf, "ABC") == 0);
+
+    gml_string_repeat("na", 3, buf, sizeof(buf));
+    assert(strcmp(buf, "nanana") == 0);
+
+    double sqr_val = 0, frac_val = 0, color_val = 0;
+    gm82_gml_eval_expr(&rt, NULL, "sqr(5.0)", &sqr_val);
+    assert(sqr_val == 25.0);
+    gm82_gml_eval_expr(&rt, NULL, "frac(12.34)", &frac_val);
+    assert(fabs(frac_val - 0.34) < 0.0001);
+
+    gm82_gml_eval_expr(&rt, NULL, "make_color_rgb(10, 20, 30)", &color_val);
+    assert(gml_color_get_red(color_val) == 10.0);
+    assert(gml_color_get_green(color_val) == 20.0);
+    assert(gml_color_get_blue(color_val) == 30.0);
+
     /* Test INI File I/O */
     const char *ini_path = "/tmp/test_save.ini";
     gml_ini_open(ini_path);

@@ -75,6 +75,16 @@ void gml_draw_set_color(double color);
 void gml_draw_set_alpha(double alpha);
 double gml_draw_get_alpha(void);
 double gml_draw_get_color(void);
+
+/* Color functions */
+double gml_make_color_rgb(double red, double green, double blue);
+double gml_make_color_hsv(double hue, double sat, double val);
+double gml_color_get_red(double color);
+double gml_color_get_green(double color);
+double gml_color_get_blue(double color);
+double gml_color_get_hue(double color);
+double gml_color_get_saturation(double color);
+double gml_color_get_value(double color);
 void gml_draw_rectangle(double x1, double y1, double x2, double y2, double outline);
 void gml_draw_circle(double x, double y, double r, double outline);
 void gml_draw_line(double x1, double y1, double x2, double y2);
