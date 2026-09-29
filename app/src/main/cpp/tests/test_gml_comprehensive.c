@@ -56,11 +56,22 @@ int main(void) {
     assert(gml_median(-5.0, 100.0, 0.0) == 0.0);
 
     /* Test evaluation of clamp, median, and multi-arg point/geometry functions in GML VM statements/expressions */
+    /* Test evaluation of clamp, median, and multi-arg spatial/geometry functions in GML VM */
     double res = 0;
     gm82_gml_eval_expr(&rt, inst, "clamp(120, 0, 100)", &res);
     assert(res == 100.0);
     gm82_gml_eval_expr(&rt, inst, "median(50, 10, 30)", &res);
     assert(res == 30.0);
+    gm82_gml_eval_expr(&rt, inst, "mean(10, 20, 30, 40)", &res);
+    assert(res == 25.0);
+    gm82_gml_eval_expr(&rt, inst, "sqr(5)", &res);
+    assert(res == 25.0);
+    gm82_gml_eval_expr(&rt, inst, "point_distance(0, 0, 3, 4)", &res);
+    assert(res == 5.0);
+    gm82_gml_eval_expr(&rt, inst, "point_in_rectangle(5, 5, 0, 0, 10, 10)", &res);
+    assert(res == 1.0);
+    gm82_gml_eval_expr(&rt, inst, "point_in_rectangle(15, 5, 0, 0, 10, 10)", &res);
+    assert(res == 0.0);
 
     gm82_gml_eval_expr(&rt, inst, "point_distance(0, 0, 3, 4)", &res);
     assert(res == 5.0);
