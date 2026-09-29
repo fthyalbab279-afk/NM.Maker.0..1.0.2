@@ -284,6 +284,17 @@ static bool parse_primary(gml_parser *p, double *out) {
         }
         if (!match(p, ')')) return false;
         double arg = args[0];
+        if (strcmp(id, "make_color_rgb") == 0) { *out = gml_make_color_rgb(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "make_color_hsv") == 0) { *out = gml_make_color_hsv(args[0], args[1], args[2]); return true; }
+        if (strcmp(id, "color_get_red") == 0) { *out = gml_color_get_red(arg); return true; }
+        if (strcmp(id, "color_get_green") == 0) { *out = gml_color_get_green(arg); return true; }
+        if (strcmp(id, "color_get_blue") == 0) { *out = gml_color_get_blue(arg); return true; }
+        if (strcmp(id, "color_get_hue") == 0) { *out = gml_color_get_hue(arg); return true; }
+        if (strcmp(id, "color_get_saturation") == 0) { *out = gml_color_get_saturation(arg); return true; }
+        if (strcmp(id, "color_get_value") == 0) { *out = gml_color_get_value(arg); return true; }
+        if (strcmp(id, "motion_set") == 0) { gml_motion_set(args[0], args[1]); *out = 1; return true; }
+        if (strcmp(id, "motion_add") == 0) { gml_motion_add(args[0], args[1]); *out = 1; return true; }
+        if (strcmp(id, "move_towards_point") == 0) { gml_move_towards_point(args[0], args[1], args[2]); *out = 1; return true; }
         if (strcmp(id, "abs") == 0) { *out = fabs(arg); return true; }
         if (strcmp(id, "sqr") == 0) { *out = arg * arg; return true; }
         if (strcmp(id, "frac") == 0) { *out = arg - floor(arg); return true; }

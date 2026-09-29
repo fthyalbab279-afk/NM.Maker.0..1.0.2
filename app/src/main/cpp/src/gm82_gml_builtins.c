@@ -607,6 +607,88 @@ void gml_draw_set_alpha(double alpha) { g_draw_alpha = alpha; }
 double gml_draw_get_alpha(void) { return g_draw_alpha; }
 double gml_draw_get_color(void) { return (double)g_draw_color; }
 
+double gml_make_color_rgb(double red, double green, double blue) {
+    int r = (int)gml_clamp(red, 0, 255);
+    int g = (int)gml_clamp(green, 0, 255);
+    int b = (int)gml_clamp(blue, 0, 255);
+    return (double)(r | (g << 8) | (b << 16));
+}
+
+double gml_color_get_red(double color) {
+    uint32_t c = (uint32_t)color;
+    return (double)(c & 0xFF);
+}
+
+double gml_color_get_green(double color) {
+    uint32_t c = (uint32_t)color;
+    return (double)((c >> 8) & 0xFF);
+}
+
+double gml_color_get_blue(double color) {
+    uint32_t c = (uint32_t)color;
+    return (double)((c >> 16) & 0xFF);
+}
+
+double gml_make_color_hsv(double hue, double sat, double val) {
+    double h = fmod(hue, 256.0);
+    if (h < 0) h += 256.0;
+    double s = gml_clamp(sat, 0, 255) / 255.0;
+    double v = gml_clamp(val, 0, 255) / 255.0;
+    if (s <= 0.0) return gml_make_color_rgb(v * 255.0, v * 255.0, v * 255.0);
+
+    double h_deg = h * 360.0 / 256.0;
+    int sector = (int)(h_deg / 60.0) % 6;
+    double f = (h_deg / 60.0) - sector;
+    double p = v * (1.0 - s);
+    double q = v * (1.0 - s * f);
+    double t = v * (1.0 - s * (1.0 - f));
+
+    double r = 0, g = 0, b = 0;
+    switch (sector) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+    }
+    return gml_make_color_rgb(r * 255.0, g * 255.0, b * 255.0);
+}
+
+double gml_color_get_hue(double color) {
+    double r = gml_color_get_red(color) / 255.0;
+    double g = gml_color_get_green(color) / 255.0;
+    double b = gml_color_get_blue(color) / 255.0;
+    double max_v = fmax(r, fmax(g, b));
+    double min_v = fmin(r, fmin(g, b));
+    double delta = max_v - min_v;
+    if (delta <= 0.0001) return 0.0;
+    double h = 0;
+    if (max_v == r) h = fmod((g - b) / delta, 6.0);
+    else if (max_v == g) h = ((b - r) / delta) + 2.0;
+    else h = ((r - g) / delta) + 4.0;
+    h *= 60.0;
+    if (h < 0) h += 360.0;
+    return h * 255.0 / 360.0;
+}
+
+double gml_color_get_saturation(double color) {
+    double r = gml_color_get_red(color) / 255.0;
+    double g = gml_color_get_green(color) / 255.0;
+    double b = gml_color_get_blue(color) / 255.0;
+    double max_v = fmax(r, fmax(g, b));
+    double min_v = fmin(r, fmin(g, b));
+    if (max_v <= 0.0001) return 0.0;
+    return ((max_v - min_v) / max_v) * 255.0;
+}
+
+double gml_color_get_value(double color) {
+    double r = gml_color_get_red(color);
+    double g = gml_color_get_green(color);
+    double b = gml_color_get_blue(color);
+    return fmax(r, fmax(g, b));
+}
+
 static void put_px(int x, int y) {
     if (!g_draw_buf || x < 0 || y < 0 || x >= g_draw_w || y >= g_draw_h) return;
     uint8_t *d = g_draw_buf + ((size_t)y * (size_t)g_draw_w + (size_t)x) * 4;

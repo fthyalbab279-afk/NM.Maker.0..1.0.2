@@ -52,6 +52,10 @@ else if(!strcmp(n->text,"irandom_range")&&c==2){long lo=(long)num(a[0]),hi=(long
 else if(!strcmp(n->text,"choose")&&c>=1){size_t pick=(size_t)(rand()%c);r=copyv(&a[pick]);}
 else if(!strcmp(n->text,"point_distance")&&c==4){double dx=num(a[2])-num(a[0]),dy=num(a[3])-num(a[1]);r=gml_value_real(sqrt(dx*dx+dy*dy));}
 else if(!strcmp(n->text,"point_direction")&&c==4){double dx=num(a[2])-num(a[0]),dy=num(a[1])-num(a[3]);double angle=atan2(dy,dx)*180.0/3.14159265358979323846;if(angle<0)angle+=360.0;r=gml_value_real(angle);}
+else if(!strcmp(n->text,"make_color_rgb")&&c==3){long cr=(long)num(a[0]),cg=(long)num(a[1]),cb=(long)num(a[2]);if(cr<0)cr=0;if(cr>255)cr=255;if(cg<0)cg=0;if(cg>255)cg=255;if(cb<0)cb=0;if(cb>255)cb=255;r=gml_value_real((double)(cr|(cg<<8)|(cb<<16)));}
+else if(!strcmp(n->text,"color_get_red")&&c==1){long col=(long)num(a[0]);r=gml_value_real((double)(col&0xFF));}
+else if(!strcmp(n->text,"color_get_green")&&c==1){long col=(long)num(a[0]);r=gml_value_real((double)((col>>8)&0xFF));}
+else if(!strcmp(n->text,"color_get_blue")&&c==1){long col=(long)num(a[0]);r=gml_value_real((double)((col>>16)&0xFF));}
 else if(!strcmp(n->text,"lengthdir_x")&&c==2)r=gml_value_real(num(a[0])*cos(num(a[1])*3.14159265358979323846/180.0));
 else if(!strcmp(n->text,"lengthdir_y")&&c==2)r=gml_value_real(-num(a[0])*sin(num(a[1])*3.14159265358979323846/180.0));
 else if(!strcmp(n->text,"string")&&c==1){if(a[0].kind==GML_V_STRING)r=gml_value_string(text_of(a[0]));else if(a[0].kind==GML_V_BOOL)r=gml_value_string(a[0].boolean?"1":"0");else r=number_text(num(a[0]));}

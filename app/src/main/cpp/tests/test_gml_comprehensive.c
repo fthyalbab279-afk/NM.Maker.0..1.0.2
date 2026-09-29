@@ -61,8 +61,14 @@ int main(void) {
     assert(fabs(gml_dcos(0.0) - 1.0) < 0.0001);
     assert(fabs(gml_darcsin(1.0) - 90.0) < 0.0001);
 
+    /* Test color built-ins */
+    double col = gml_make_color_rgb(255, 128, 64);
+    assert(gml_color_get_red(col) == 255.0);
+    assert(gml_color_get_green(col) == 128.0);
+    assert(gml_color_get_blue(col) == 64.0);
+
     /* Test GML expression evaluation of math, trig & vector functions */
-    double dist = 0, dir = 0, lx = 0, val_sqr = 0, val_frac = 0, val_mean = 0, val_disp = 0, val_surf = 0;
+    double dist = 0, dir = 0, lx = 0, val_sqr = 0, val_frac = 0, val_mean = 0, val_disp = 0, val_surf = 0, val_col = 0;
     gm82_gml_eval_expr(&rt, inst, "point_distance(0, 0, 6, 8)", &dist);
     assert(dist == 10.0);
     gm82_gml_eval_expr(&rt, inst, "point_direction(0, 0, 0, 10)", &dir);
@@ -78,6 +84,10 @@ int main(void) {
     assert(val_mean == 20.0);
     gm82_gml_eval_expr(&rt, inst, "display_get_width()", &val_disp);
     assert(val_disp > 0);
+    gm82_gml_eval_expr(&rt, inst, "make_color_rgb(100, 150, 200)", &val_col);
+    assert(gml_color_get_red(val_col) == 100.0);
+    assert(gml_color_get_green(val_col) == 150.0);
+    assert(gml_color_get_blue(val_col) == 200.0);
 
     /* Test surface lifecycle in evaluator */
     gm82_gml_eval_expr(&rt, inst, "surface_create(64, 64)", &val_surf);
