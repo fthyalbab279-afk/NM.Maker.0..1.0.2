@@ -32,6 +32,12 @@ int main(void) {
     assert(gml_string_char_at("ABC", 2) == (double)'B');
 
     char buf[128];
+    assert(gml_string_letters("GM82 Studio 2026!", buf, sizeof(buf)) == 8.0);
+    assert(strcmp(buf, "GMStudio") == 0);
+
+    assert(gml_string_repeat("Ha", 3, buf, sizeof(buf)) == 6.0);
+    assert(strcmp(buf, "HaHaHa") == 0);
+
     assert(gml_string_copy("GameMaker", 1, 4, buf, sizeof(buf)) == 4.0);
     assert(strcmp(buf, "Game") == 0);
 
