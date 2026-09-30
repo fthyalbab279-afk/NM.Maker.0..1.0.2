@@ -265,13 +265,6 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (peek(p) != ')') {
             for (;;) {
                 if (nargs >= 16) return false;
-    /* function call? collect up to 8 args */
-    if (match(p, '(')) {
-        double args[8] = {0,0,0,0,0,0,0,0};
-        int nargs = 0;
-        if (peek(p) != ')') {
-            for (;;) {
-                if (nargs >= 8) return false;
                 if (!parse_expr(p, &args[nargs])) return false;
                 nargs++;
                 if (peek(p) != ',') break;
