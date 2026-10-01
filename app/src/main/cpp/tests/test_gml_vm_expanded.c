@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 int main(void) {
     puts("=== Testing Expanded GML VM Features (Arrays, INI I/O, Collision Circle) ===");
