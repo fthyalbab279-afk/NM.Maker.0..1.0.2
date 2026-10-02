@@ -290,9 +290,16 @@ static bool parse_primary(gml_parser *p, double *out) {
         if (strcmp(id, "floor") == 0) { *out = floor(arg); return true; }
         if (strcmp(id, "ceil") == 0) { *out = ceil(arg); return true; }
         if (strcmp(id, "round") == 0) { *out = round(arg); return true; }
-        if (strcmp(id, "sqr") == 0) { *out = arg * arg; return true; }
-        if (strcmp(id, "frac") == 0) { *out = arg - floor(arg); return true; }
-        if (strcmp(id, "exp") == 0) { *out = exp(arg); return true; }
+        if (strcmp(id, "sqr") == 0) { *out = gml_sqr(arg); return true; }
+        if (strcmp(id, "frac") == 0) { *out = gml_frac(arg); return true; }
+        if (strcmp(id, "exp") == 0) { *out = gml_exp(arg); return true; }
+        if (strcmp(id, "log2") == 0) { *out = gml_log2(arg); return true; }
+        if (strcmp(id, "log10") == 0) { *out = gml_log10(arg); return true; }
+        if (strcmp(id, "logn") == 0) {
+            double nval = arg;
+            double vval = (nargs >= 2) ? args[1] : 0;
+            *out = gml_logn(nval, vval); return true;
+        }
         if (strcmp(id, "clamp") == 0) {
             double lo = (nargs >= 2) ? args[1] : 0;
             double hi = (nargs >= 3) ? args[2] : 0;
