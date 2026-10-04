@@ -6,7 +6,7 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
-last_test_log: "Added test_paths_particles_mpgrid.c into test suite (Phase 5.5/5.6 PASS). Verified all 10 native host test suites (test_full_suite, test_runtime_guard, test_dual_load, test_4_game_smoke, test_mario_physics_parity, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_paths_particles_mpgrid) ALL PASS via run_engine_suite.py."
+last_test_log: "Phase 6 & 7 PASS: Expanded gm82_decode_scripts_from_gmk naming prefix handling (gml_, action_, fn_, scr_, script_) and verified gm82_jni.c / native symbol compilation with OpenJDK JNI headers. Verified all 10 native host test suites (test_full_suite, test_runtime_guard, test_dual_load, test_4_game_smoke, test_mario_physics_parity, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_paths_particles_mpgrid) ALL PASS via run_engine_suite.py."
 last_run_date: 2026-09-29
 
 ## rules (لا تُكسر)
@@ -21,9 +21,9 @@ Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/a
 
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Added test_paths_particles_mpgrid.c (Phase 5.5/5.6 PASS) to native test suite and updated run_engine_suite.py runner.
+DONE: Updated gm82_script.c GML script prefix decoding and validated JNI native symbol compilation in gm82_jni.c.
 TEST: All 10 native C host test suites passing (test_full_suite, test_runtime_guard, test_dual_load, test_4_game_smoke, test_mario_physics_parity, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_paths_particles_mpgrid ALL PASS).
 RESULT: PASS
 REMAINING: GLES Hardware Rendering, OpenSL ES Audio Backend, full GML VM bytecode compiler, precise per-pixel collisions, Android device hardware testing.
-NEXT: Advance Phase 6 format robustness and Phase 7 Android JNI/GLES runtime integration.
+NEXT: Maintain host stability, run engine suite, and continue Android device JNI testing.
 CLAIM_100: no
