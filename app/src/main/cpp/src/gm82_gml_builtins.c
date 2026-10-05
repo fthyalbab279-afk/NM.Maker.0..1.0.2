@@ -302,6 +302,9 @@ double gml_room_speed(void) { return g_rt ? (double)g_rt->room_speed : 30; }
 
 double gml_abs(double v) { return fabs(v); }
 double gml_sign(double v) { return (v > 0) - (v < 0); }
+double gml_log2(double v) { return v > 0 ? log2(v) : 0; }
+double gml_log10(double v) { return v > 0 ? log10(v) : 0; }
+double gml_logn(double n, double v) { return (n > 0 && n != 1.0 && v > 0) ? (log(v) / log(n)) : 0; }
 double gml_clamp(double v, double lo, double hi) {
     if (v < lo) return lo;
     if (v > hi) return hi;
