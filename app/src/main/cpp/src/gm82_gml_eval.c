@@ -66,42 +66,44 @@ double gm82_gml_get_script_arg(int index) {
 
 static bool get_var(gml_parser *p, const char *name, double *out) {
     gm82_instance *s = p->self;
-    if (strncmp(name, "argument", 8) == 0 && isdigit((unsigned char)name[8])) {
+    /* Fast path for script arguments */
+    if (name[0] == 'a' && strncmp(name, "argument", 8) == 0 && isdigit((unsigned char)name[8])) {
         int idx = atoi(name + 8);
         if (idx >= 0 && idx < 16) {
             *out = g_script_args[idx];
             return true;
         }
     }
+
+    /* Common built-in variables ordered by evaluation frequency in GML steps */
     if (strcmp(name, "x") == 0) { *out = s ? s->x : 0; return true; }
     if (strcmp(name, "y") == 0) { *out = s ? s->y : 0; return true; }
-    if (strcmp(name, "bbox_left") == 0) { *out = gml_get_bbox_left(); return true; }
-    if (strcmp(name, "bbox_right") == 0) { *out = gml_get_bbox_right(); return true; }
-    if (strcmp(name, "bbox_top") == 0) { *out = gml_get_bbox_top(); return true; }
-    if (strcmp(name, "bbox_bottom") == 0) { *out = gml_get_bbox_bottom(); return true; }
     if (strcmp(name, "hspeed") == 0) { *out = s ? s->hspeed : 0; return true; }
     if (strcmp(name, "vspeed") == 0) { *out = s ? s->vspeed : 0; return true; }
     if (strcmp(name, "speed") == 0) { *out = s ? s->speed : 0; return true; }
     if (strcmp(name, "direction") == 0) { *out = s ? s->direction : 0; return true; }
     if (strcmp(name, "image_index") == 0) { *out = s ? (double)s->image_index : 0; return true; }
     if (strcmp(name, "image_speed") == 0) { *out = s ? s->image_speed : 0; return true; }
+    if (strcmp(name, "sprite_index") == 0) { *out = s ? (double)s->sprite_index : 0; return true; }
     if (strcmp(name, "image_xscale") == 0) { *out = s ? s->image_xscale : 1; return true; }
     if (strcmp(name, "image_yscale") == 0) { *out = s ? s->image_yscale : 1; return true; }
-    if (strcmp(name, "sprite_index") == 0) { *out = s ? (double)s->sprite_index : 0; return true; }
-    if (strcmp(name, "bbox_left") == 0) { *out = s ? s->x : 0; return true; }
-    if (strcmp(name, "bbox_right") == 0) {
-        int sw = 16;
-        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
-            sw = p->rt->sprites->frames[s->sprite_index].width;
-        *out = s ? s->x + sw : 0; return true;
+
+    /* Check custom instance variables before scanning global resource lists */
+    if (s) {
+        for (int k = 0; k < s->var_count; k++) {
+            if (strcmp(s->vars[k].name, name) == 0) {
+                *out = s->vars[k].value;
+                return true;
+            }
+        }
     }
-    if (strcmp(name, "bbox_top") == 0) { *out = s ? s->y : 0; return true; }
-    if (strcmp(name, "bbox_bottom") == 0) {
-        int sh = 16;
-        if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
-            sh = p->rt->sprites->frames[s->sprite_index].height;
-        *out = s ? s->y + sh : 0; return true;
-    }
+
+    /* Bounding box built-ins */
+    if (strcmp(name, "bbox_left") == 0) { *out = gml_get_bbox_left(); return true; }
+    if (strcmp(name, "bbox_right") == 0) { *out = gml_get_bbox_right(); return true; }
+    if (strcmp(name, "bbox_top") == 0) { *out = gml_get_bbox_top(); return true; }
+    if (strcmp(name, "bbox_bottom") == 0) { *out = gml_get_bbox_bottom(); return true; }
+
     if (strcmp(name, "sprite_width") == 0) {
         int sw = 16;
         if (p->rt && p->rt->sprites && s && s->sprite_index >= 0 && s->sprite_index < p->rt->sprites->count)
@@ -117,6 +119,8 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "solid") == 0) { *out = s && s->solid ? 1 : 0; return true; }
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
+
+    /* Game and Room built-ins */
     if (strcmp(name, "score") == 0) { *out = gml_get_score(); return true; }
     if (strcmp(name, "lives") == 0) { *out = gml_get_lives(); return true; }
     if (strcmp(name, "health") == 0) { *out = gml_get_health(); return true; }
@@ -126,18 +130,22 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "room_speed") == 0) { *out = p->rt ? (double)p->rt->room_speed : 30; return true; }
     if (strcmp(name, "mouse_x") == 0) { *out = gml_mouse_x(); return true; }
     if (strcmp(name, "mouse_y") == 0) { *out = gml_mouse_y(); return true; }
+
     /* vk_ constants (GM key codes) */
-    if (strcmp(name, "vk_left") == 0) { *out = 37; return true; }
-    if (strcmp(name, "vk_right") == 0) { *out = 39; return true; }
-    if (strcmp(name, "vk_up") == 0) { *out = 38; return true; }
-    if (strcmp(name, "vk_down") == 0) { *out = 40; return true; }
-    if (strcmp(name, "vk_enter") == 0) { *out = 13; return true; }
-    if (strcmp(name, "vk_space") == 0) { *out = 32; return true; }
-    if (strcmp(name, "vk_shift") == 0) { *out = 16; return true; }
-    if (strcmp(name, "vk_control") == 0) { *out = 17; return true; }
-    if (strcmp(name, "vk_escape") == 0) { *out = 27; return true; }
-    if (strcmp(name, "vk_nokey") == 0) { *out = 0; return true; }
-    if (strcmp(name, "vk_anykey") == 0) { *out = 1; return true; }
+    if (name[0] == 'v' && name[1] == 'k' && name[2] == '_') {
+        if (strcmp(name, "vk_left") == 0) { *out = 37; return true; }
+        if (strcmp(name, "vk_right") == 0) { *out = 39; return true; }
+        if (strcmp(name, "vk_up") == 0) { *out = 38; return true; }
+        if (strcmp(name, "vk_down") == 0) { *out = 40; return true; }
+        if (strcmp(name, "vk_enter") == 0) { *out = 13; return true; }
+        if (strcmp(name, "vk_space") == 0) { *out = 32; return true; }
+        if (strcmp(name, "vk_shift") == 0) { *out = 16; return true; }
+        if (strcmp(name, "vk_control") == 0) { *out = 17; return true; }
+        if (strcmp(name, "vk_escape") == 0) { *out = 27; return true; }
+        if (strcmp(name, "vk_nokey") == 0) { *out = 0; return true; }
+        if (strcmp(name, "vk_anykey") == 0) { *out = 1; return true; }
+    }
+
     /* Resource name → index (GM style: sprite_index = mini_mario) */
     if (p->rt) {
         if (p->rt->sprite_groups) {
@@ -163,15 +171,6 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
             }
         }
     }
-    /* Check custom instance variables */
-    if (s) {
-        for (int k = 0; k < s->var_count; k++) {
-            if (strcmp(s->vars[k].name, name) == 0) {
-                *out = s->vars[k].value;
-                return true;
-            }
-        }
-    }
 
     /* unknown identifier: default 0 */
     *out = 0;
@@ -182,6 +181,8 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     gm82_instance *s = p->self;
     if (!s && !(strcmp(name,"score")==0 || strcmp(name,"lives")==0 || strcmp(name,"health")==0))
         return false;
+
+    /* Built-in instance variables ordered by setting frequency */
     if (strcmp(name, "x") == 0) { s->x = v; return true; }
     if (strcmp(name, "y") == 0) { s->y = v; return true; }
     if (strcmp(name, "hspeed") == 0) { s->hspeed = v; return true; }
@@ -190,13 +191,10 @@ static bool set_var(gml_parser *p, const char *name, double v) {
     if (strcmp(name, "direction") == 0) { s->direction = v; return true; }
     if (strcmp(name, "image_index") == 0) { s->image_index = (int32_t)v; return true; }
     if (strcmp(name, "image_speed") == 0) { s->image_speed = v; return true; }
+    if (strcmp(name, "sprite_index") == 0) { s->sprite_index = (int32_t)v; return true; }
     if (strcmp(name, "image_xscale") == 0) { s->image_xscale = v; return true; }
     if (strcmp(name, "image_yscale") == 0) { s->image_yscale = v; return true; }
-    if (strcmp(name, "sprite_index") == 0) { s->sprite_index = (int32_t)v; return true; }
     if (strcmp(name, "solid") == 0) { s->solid = v != 0; return true; }
-    if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
-    if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
-    if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
 
     /* Set custom instance variable */
     if (s) {
@@ -206,13 +204,19 @@ static bool set_var(gml_parser *p, const char *name, double v) {
                 return true;
             }
         }
-        if (s->var_count < 32) {
-            strncpy(s->vars[s->var_count].name, name, 31);
-            s->vars[s->var_count].name[31] = 0;
-            s->vars[s->var_count].value = v;
-            s->var_count++;
-            return true;
-        }
+    }
+
+    if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
+    if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
+    if (strcmp(name, "health") == 0) { gml_set_health(v); return true; }
+
+    /* Add new custom variable if not found */
+    if (s && s->var_count < 32) {
+        strncpy(s->vars[s->var_count].name, name, 31);
+        s->vars[s->var_count].name[31] = 0;
+        s->vars[s->var_count].value = v;
+        s->var_count++;
+        return true;
     }
 
     snprintf(p->err, sizeof(p->err), "cannot set %s", name);
