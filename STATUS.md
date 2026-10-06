@@ -4,6 +4,8 @@
 النسبة الفعلية مقارنة بـ Windows GM82 الكامل: **~48% (أقل من 50%)**
 
 ## 📌 ملخص الوضع الحالي
+- النواة تتطور كنسخة أولية على Host (تفك GMK، تمارس Soft Render، تحاكي فيزياء ماريو عبر `test_mario_physics_parity.c` بنجاح `MARIO_PLAYABLE_PASS_HOST` وتفحص 4 ألعاب عينات عبر `test_4_game_smoke.c` بنجاح 4/4 Smoke PASS، وتنفذ أفعال DnD وحلقات GML التحكمية `while`, `do...until` والمصفوفات ودوال INI I/O ودوال النصوص والرياضيات `sqr`, `frac`, `exp`, `log2`, `log10`, `logn`, `mean`, `clamp`, `median`, `point_distance` والدوائر الصدامية `collision_circle` والدقائق الخطية `collision_line` والبيضاويات `collision_ellipse` والرباعيات `collision_rectangle` والنقاط `collision_point`).
+- اجتازت جميع الاختبارات التسعة الأصلية واختبارات الدخان والفيزياء والوحدات على المضيف (ALL 9 TEST SUITES PASS).
 - النواة تتطور كنسخة أولية على Host (تفك GMK، تمارس Soft Render، تحاكي فيزياء ماريو عبر `test_mario_physics_parity.c` بنجاح `MARIO_PLAYABLE_PASS_HOST` وتفحص 4 ألعاب عينات عبر `test_4_game_smoke.c` بنجاح 4/4 Smoke PASS، وتنفذ أفعال DnD وحلقات GML التحكمية `while`, `do...until` والمصفوفات ودوال INI I/O ودوال النصوص والرياضيات `clamp`, `median`, `mean`, `sqr`, `point_distance` والدوائر الصدامية `collision_circle` والدقائق الخطية `collision_line` والبيضاويات `collision_ellipse` والرباعيات `collision_rectangle` والنقاط `collision_point`).
 - تم توسيع فك سكريبتات GML لدعم بادئات الأسماء المتقدمة (Phase 6 PASS) والتحقق من تجميع رموز JNI وربط الصوت (Phase 7 PASS).
 - اجتازت جميع الاختبارات العشرة للوحدات والمسارات والجزيئات والجدول الزمني والفيزياء ودخان الـ 4 ألعاب على المضيف (ALL 10 TEST SUITES PASS).

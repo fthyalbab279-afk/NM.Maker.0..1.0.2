@@ -355,6 +355,13 @@ double gml_logn(double n, double v);
 double gml_lerp(double a, double b, double t);
 double gml_irandom(double n);
 double gml_random(double n);
+double gml_sqr(double v);
+double gml_frac(double v);
+double gml_exp(double v);
+double gml_log2(double v);
+double gml_log10(double v);
+double gml_logn(double n, double v);
+double gml_mean(double a, double b, double c);
 
 #ifdef __cplusplus
 }
