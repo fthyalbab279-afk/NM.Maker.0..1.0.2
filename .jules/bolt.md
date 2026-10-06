@@ -1,0 +1,3 @@
+## 2026-10-06 - Optimize GML Variable Resolution Ordering
+**Learning:** In interpreted GML steps, `get_var()` and `set_var()` are called tens of thousands of times per second. Placing custom instance variable array iteration (`s->vars`) and common built-ins (`x`, `y`, `hspeed`, `vspeed`, `image_index`, `sprite_index`) BEFORE global resource array scans (`p->rt->sprites`, `p->rt->objects`) avoids costly linear string matches across game resource lists during variable lookup.
+**Action:** Always place high-frequency instance variable checks ahead of global/resource lookup loops in interpreter/evaluator hot paths.

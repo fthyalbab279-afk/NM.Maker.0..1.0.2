@@ -33,7 +33,8 @@
 5. حلقات التحكم والتكرار ومكتبات GML البرمجية (`while`, `do...until`, `string_digits`, `string_lower`, `string_upper`, `ini_open/read/write`, `clamp`, `median`, `mean`, `sqr`, `point_distance`, `collision_circle`, `collision_line`, `collision_rectangle`, `collision_point`, `collision_ellipse`, `point_in_rectangle`, `point_in_circle`, `point_in_triangle`).
 6. فك أفعال DnD الشائعة ودوال الحركة (`motion_set`, `motion_add`, `move_towards_point`).
 7. طابور تشغيل الصوت البرمجي وPitch/Pan والربط بـ JNI.
-8. اجتياز جميع اختبارات الوحدات التسعة ومحرك النواة عبر `run_engine_suite.py` (ALL PASS).
+8. مسارات الحركة والجدول الزمني وأنظمة الجزيئات وتخطيط الحركة شبكياً (`gm82_path`, `gm82_timeline`, `gm82_particles`, `gm82_mp_grid`).
+9. اجتياز جميع اختبارات الوحدات العشر ومحرك النواة عبر `run_engine_suite.py` (ALL 10 PASS).
 
 ---
 

@@ -309,6 +309,9 @@ double gml_log2(double v) { return log2(v); }
 double gml_log10(double v) { return log10(v); }
 double gml_logn(double n, double v) { return (n > 0.0 && n != 1.0) ? (log(v) / log(n)) : 0.0; }
 double gml_mean(double a, double b, double c) { return (a + b + c) / 3.0; }
+double gml_log2(double v) { return v > 0 ? log2(v) : 0; }
+double gml_log10(double v) { return v > 0 ? log10(v) : 0; }
+double gml_logn(double n, double v) { return (n > 0 && n != 1.0 && v > 0) ? (log(v) / log(n)) : 0; }
 double gml_clamp(double v, double lo, double hi) {
     if (v < lo) return lo;
     if (v > hi) return hi;

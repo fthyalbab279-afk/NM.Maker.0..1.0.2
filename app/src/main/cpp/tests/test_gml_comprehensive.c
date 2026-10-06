@@ -82,6 +82,12 @@ int main(void) {
     assert(gml_abs(res - 2.0) < 1e-6);
     gm82_gml_eval_expr(&rt, inst, "logn(3, 81)", &res);
     assert(gml_abs(res - 4.0) < 1e-6);
+    gm82_gml_eval_expr(&rt, inst, "log2(8)", &res);
+    assert(res == 3.0);
+    gm82_gml_eval_expr(&rt, inst, "log10(100)", &res);
+    assert(res == 2.0);
+    gm82_gml_eval_expr(&rt, inst, "logn(3, 27)", &res);
+    assert(gml_abs(res - 3.0) < 1e-6);
     gm82_gml_eval_expr(&rt, inst, "point_distance(0, 0, 3, 4)", &res);
     assert(res == 5.0);
     gm82_gml_eval_expr(&rt, inst, "point_in_rectangle(5, 5, 0, 0, 10, 10)", &res);
