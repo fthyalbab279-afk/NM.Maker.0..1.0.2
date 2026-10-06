@@ -309,6 +309,9 @@ double gml_log2(double v) { return log2(v); }
 double gml_log10(double v) { return log10(v); }
 double gml_logn(double n, double v) { return (n > 0.0 && n != 1.0) ? (log(v) / log(n)) : 0.0; }
 double gml_mean(double a, double b, double c) { return (a + b + c) / 3.0; }
+double gml_log2(double v) { return v > 0 ? log2(v) : 0; }
+double gml_log10(double v) { return v > 0 ? log10(v) : 0; }
+double gml_logn(double n, double v) { return (n > 0 && n != 1.0 && v > 0) ? (log(v) / log(n)) : 0; }
 double gml_clamp(double v, double lo, double hi) {
     if (v < lo) return lo;
     if (v > hi) return hi;
@@ -448,10 +451,18 @@ double gml_collision_circle(double xc, double yc, double rad, double obj, double
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        double cx = o->x + ow / 2.0;
-        double cy = o->y + oh / 2.0;
-        double dx = cx - xc, dy = cy - yc;
-        if (dx * dx + dy * dy <= rad_sq)
+        /* ⚡ Bolt Optimization:
+         * 1. Calculate closest point on instance AABB box to circle center for standard GM8.2 geometry.
+         * 2. Perform 1D early exit on horizontal distance (dx_sq > rad_sq) to skip Y-axis calculations.
+         */
+        double px = (xc < o->x) ? o->x : ((xc > o->x + ow) ? (o->x + ow) : xc);
+        double dx = xc - px;
+        double dx_sq = dx * dx;
+        if (dx_sq > rad_sq) continue; /* Fast 1D horizontal early exit */
+
+        double py = (yc < o->y) ? o->y : ((yc > o->y + oh) ? (o->y + oh) : yc);
+        double dy = yc - py;
+        if (dx_sq + dy * dy <= rad_sq)
             return (double)o->id;
     }
     return -4;

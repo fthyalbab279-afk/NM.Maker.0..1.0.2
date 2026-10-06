@@ -65,7 +65,11 @@ int gm82_decode_scripts_from_gmk(const uint8_t *data, size_t size, gm82_script_l
         if (slen < 3 || slen > 48 || 8+(size_t)slen+20 > ol) { free(d); continue; }
         char name[64]; memcpy(name, d+8, (size_t)slen); name[slen]=0;
         int ok=1; for(int k=0;k<slen;k++) if(name[k]<32||name[k]>126) ok=0;
-        if (!ok || (strncmp(name,"scr",3)!=0 && strncmp(name,"script",6)!=0)) {
+        if (!ok || (strncmp(name, "scr", 3) != 0 &&
+                    strncmp(name, "script", 6) != 0 &&
+                    strncmp(name, "gml_", 4) != 0 &&
+                    strncmp(name, "action_", 7) != 0 &&
+                    strncmp(name, "fn_", 3) != 0)) {
             free(d); continue;
         }
         /* after name + lastChanged(8) + ver(4): script code string */

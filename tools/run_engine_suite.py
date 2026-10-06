@@ -13,6 +13,7 @@ TESTS = [
     ("test_gml_vm_execution", "app/src/main/cpp/tests/test_gml_vm_execution.c"),
     ("test_gml_vm_expanded", "app/src/main/cpp/tests/test_gml_vm_expanded.c"),
     ("test_gml_ds_collisions", "app/src/main/cpp/tests/test_gml_ds_collisions.c"),
+    ("test_paths_particles_mpgrid", "app/src/main/cpp/tests/test_paths_particles_mpgrid.c"),
 ]
 
 def run():
