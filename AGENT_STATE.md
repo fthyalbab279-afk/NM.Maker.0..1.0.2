@@ -6,6 +6,7 @@ claim_100_percent_allowed: false
 release_tag: HOST_PROTOTYPE
 
 last_result: PASS
+last_test_log: "Implemented additional GML math built-ins (sqr, frac, exp, log2, log10, logn, mean) in gm82_gml_builtins.c and verified via test_gml_comprehensive.c. Verified all 9 native host test suites (test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_4_game_smoke, test_mario_physics_parity) ALL PASS via run_engine_suite.py."
 last_test_log: "Phase 5 PASS: Implemented GML math built-ins (sqr, frac, exp, log2, log10, logn, mean) in gm82_gml_builtins.c and verified with test_gml_comprehensive.c. All 9 host test suites ALL PASS."
 last_test_log: "Phase 5 PASS: Integrated log2, log10, and logn math helper builtins in gm82_gml_builtins.c and bound them in gm82_gml_eval.c. Verified all 10 native host test suites (test_full_suite, test_runtime_guard, test_dual_load, test_4_game_smoke, test_mario_physics_parity, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_paths_particles_mpgrid) ALL PASS via run_engine_suite.py."
 last_run_date: 2026-09-29

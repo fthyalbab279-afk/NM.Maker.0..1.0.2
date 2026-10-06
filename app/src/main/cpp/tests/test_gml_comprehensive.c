@@ -72,6 +72,16 @@ int main(void) {
     assert(res == 25.0);
     gm82_gml_eval_expr(&rt, inst, "sqr(5)", &res);
     assert(res == 25.0);
+    gm82_gml_eval_expr(&rt, inst, "frac(12.75)", &res);
+    assert(gml_abs(res - 0.75) < 1e-6);
+    gm82_gml_eval_expr(&rt, inst, "exp(1)", &res);
+    assert(gml_abs(res - 2.718281828) < 1e-4);
+    gm82_gml_eval_expr(&rt, inst, "log2(8)", &res);
+    assert(gml_abs(res - 3.0) < 1e-6);
+    gm82_gml_eval_expr(&rt, inst, "log10(100)", &res);
+    assert(gml_abs(res - 2.0) < 1e-6);
+    gm82_gml_eval_expr(&rt, inst, "logn(3, 81)", &res);
+    assert(gml_abs(res - 4.0) < 1e-6);
     gm82_gml_eval_expr(&rt, inst, "log2(8)", &res);
     assert(res == 3.0);
     gm82_gml_eval_expr(&rt, inst, "log10(100)", &res);
