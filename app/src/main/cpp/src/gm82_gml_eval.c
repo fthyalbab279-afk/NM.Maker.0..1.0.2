@@ -120,6 +120,14 @@ static bool get_var(gml_parser *p, const char *name, double *out) {
     if (strcmp(name, "id") == 0) { *out = s ? (double)s->id : 0; return true; }
     if (strcmp(name, "object_index") == 0) { *out = s ? (double)s->object_index : 0; return true; }
 
+    /* View built-ins */
+    if (strcmp(name, "view_xview") == 0) { *out = p->rt ? p->rt->view_x : 0; return true; }
+    if (strcmp(name, "view_yview") == 0) { *out = p->rt ? p->rt->view_y : 0; return true; }
+    if (strcmp(name, "view_wview") == 0) { *out = p->rt ? p->rt->view_w : 640; return true; }
+    if (strcmp(name, "view_hview") == 0) { *out = p->rt ? p->rt->view_h : 480; return true; }
+    if (strcmp(name, "view_enabled") == 0) { *out = 1.0; return true; }
+    if (strcmp(name, "view_current") == 0) { *out = 0.0; return true; }
+
     /* Game and Room built-ins */
     if (strcmp(name, "score") == 0) { *out = gml_get_score(); return true; }
     if (strcmp(name, "lives") == 0) { *out = gml_get_lives(); return true; }
@@ -205,6 +213,11 @@ static bool set_var(gml_parser *p, const char *name, double v) {
             }
         }
     }
+
+    if (strcmp(name, "view_xview") == 0) { if (p->rt) p->rt->view_x = v; return true; }
+    if (strcmp(name, "view_yview") == 0) { if (p->rt) p->rt->view_y = v; return true; }
+    if (strcmp(name, "view_wview") == 0) { if (p->rt) p->rt->view_w = v; return true; }
+    if (strcmp(name, "view_hview") == 0) { if (p->rt) p->rt->view_h = v; return true; }
 
     if (strcmp(name, "score") == 0) { gml_set_score(v); return true; }
     if (strcmp(name, "lives") == 0) { gml_set_lives(v); return true; }
@@ -432,6 +445,24 @@ static bool parse_primary(gml_parser *p, double *out) {
             double yarg = (nargs >= 2) ? args[1] : 0;
             double oarg = (nargs >= 3) ? args[2] : 0;
             *out = gml_instance_create(xarg, yarg, oarg); return true;
+        }
+        if (strcmp(id, "instance_deactivate_all") == 0) {
+            *out = gml_instance_deactivate_all((nargs >= 1) ? args[0] : 0); return true;
+        }
+        if (strcmp(id, "instance_deactivate_object") == 0) {
+            *out = gml_instance_deactivate_object(arg); return true;
+        }
+        if (strcmp(id, "instance_activate_all") == 0) {
+            *out = gml_instance_activate_all(); return true;
+        }
+        if (strcmp(id, "instance_activate_object") == 0) {
+            *out = gml_instance_activate_object(arg); return true;
+        }
+        if (strcmp(id, "instance_position") == 0) {
+            *out = gml_instance_position(args[0], args[1], (nargs >= 3) ? args[2] : -1); return true;
+        }
+        if (strcmp(id, "instance_change") == 0) {
+            *out = gml_instance_change(arg, (nargs >= 2) ? args[1] : 0); return true;
         }
         if (strcmp(id, "draw_self") == 0) {
             if (p->self) gml_draw_sprite((double)p->self->sprite_index, p->self->x, p->self->y);
