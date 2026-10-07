@@ -89,6 +89,9 @@ static void test_collision_functions(gm82_runtime *rt) {
     /* Line collision */
     assert(gml_collision_line(0.0, 0.0, 120.0, 120.0, 1, 0, 0) == (double)inst->id);
     assert(gml_collision_line(0.0, 0.0, 50.0, 50.0, 1, 0, 0) == -4.0);
+    /* Vertical and Horizontal line collision edge cases */
+    assert(gml_collision_line(105.0, 0.0, 105.0, 200.0, 1, 0, 0) == (double)inst->id);
+    assert(gml_collision_line(0.0, 105.0, 200.0, 105.0, 1, 0, 0) == (double)inst->id);
 
     /* Ellipse collision */
     assert(gml_collision_ellipse(80.0, 80.0, 120.0, 120.0, 1, 0, 0) == (double)inst->id);

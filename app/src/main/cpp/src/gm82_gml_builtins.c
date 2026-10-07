@@ -305,13 +305,10 @@ double gml_sign(double v) { return (v > 0) - (v < 0); }
 double gml_sqr(double v) { return v * v; }
 double gml_frac(double v) { double dummy; return modf(v, &dummy); }
 double gml_exp(double v) { return exp(v); }
-double gml_log2(double v) { return log2(v); }
-double gml_log10(double v) { return log10(v); }
-double gml_logn(double n, double v) { return (n > 0.0 && n != 1.0) ? (log(v) / log(n)) : 0.0; }
-double gml_mean(double a, double b, double c) { return (a + b + c) / 3.0; }
 double gml_log2(double v) { return v > 0 ? log2(v) : 0; }
 double gml_log10(double v) { return v > 0 ? log10(v) : 0; }
 double gml_logn(double n, double v) { return (n > 0 && n != 1.0 && v > 0) ? (log(v) / log(n)) : 0; }
+double gml_mean(double a, double b, double c) { return (a + b + c) / 3.0; }
 double gml_clamp(double v, double lo, double hi) {
     if (v < lo) return lo;
     if (v > hi) return hi;
@@ -500,6 +497,14 @@ double gml_collision_line(double x1, double y1, double x2, double y2, double obj
     (void)prec;
     if (!g_rt) return -4;
     int32_t oi = (int32_t)obj;
+    /* ⚡ Bolt Optimization:
+     * Precompute line segment bounding box to perform fast 2D AABB early exits
+     * before running Liang-Barsky parametric line clipping algorithm (line_aabb_overlap).
+     */
+    double min_lx = x1 < x2 ? x1 : x2;
+    double max_lx = x1 < x2 ? x2 : x1;
+    double min_ly = y1 < y2 ? y1 : y2;
+    double max_ly = y1 < y2 ? y2 : y1;
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
@@ -507,6 +512,8 @@ double gml_collision_line(double x1, double y1, double x2, double y2, double obj
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        if (o->x + ow < min_lx || o->x > max_lx || o->y + oh < min_ly || o->y > max_ly)
+            continue; /* Fast 2D AABB bounding box early exit */
         if (line_aabb_overlap(x1, y1, x2, y2, o->x, o->y, ow, oh))
             return (double)o->id;
     }
