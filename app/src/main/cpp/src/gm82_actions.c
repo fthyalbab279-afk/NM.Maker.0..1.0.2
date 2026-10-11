@@ -307,6 +307,39 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
         gm82_runtime_instance_create(rt, oi, self->x, self->y);
         return true;
     }
+    if (strcmp(ar->name, "action_create_object_motion") == 0) {
+        int oi = ar->action_id;
+        gm82_instance *inst = gm82_runtime_instance_create(rt, oi, self->x, self->y);
+        if (inst) {
+            inst->speed = (double)ar->kind;
+            inst->direction = (double)ar->event_numb;
+        }
+        return true;
+    }
+    if (strcmp(ar->name, "action_restart_game") == 0) {
+        gml_game_restart();
+        return true;
+    }
+    if (strcmp(ar->name, "action_end_game") == 0) {
+        gml_game_end();
+        return true;
+    }
+    if (strcmp(ar->name, "action_previous_room") == 0) {
+        gml_room_previous();
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_score") == 0) {
+        gml_set_score((double)ar->action_id);
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_lives") == 0) {
+        gml_set_lives((double)ar->action_id);
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_health") == 0) {
+        gml_set_health((double)ar->action_id);
+        return true;
+    }
     return false;
 }
 
