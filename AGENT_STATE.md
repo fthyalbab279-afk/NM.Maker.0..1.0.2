@@ -8,7 +8,7 @@ release_tag: HOST_PROTOTYPE
 last_result: PASS
 last_test_log: "Implemented additional GML math built-ins (sqr, frac, exp, log2, log10, logn, mean) in gm82_gml_builtins.c and verified via test_gml_comprehensive.c. Verified all 9 native host test suites (test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_4_game_smoke, test_mario_physics_parity) ALL PASS via run_engine_suite.py."
 last_test_log: "Phase 5 PASS: Implemented GML math built-ins (sqr, frac, exp, log2, log10, logn, mean) in gm82_gml_builtins.c and verified with test_gml_comprehensive.c. All 9 host test suites ALL PASS."
-last_test_log: "Phase 5 PASS: Enhanced DnD action execution in gm82_actions.c and bound view built-in variables + instance lifecycle functions in gm82_gml_eval.c. Verified all 10 native host test suites ALL PASS via run_engine_suite.py."
+last_test_log: "Phase 6 PASS: Enhanced .gm82 text project parser in gm82_text_reader.c to scan resource folder trees (sprites, objects, sounds, scripts, backgrounds, rooms) and construct Project IR nodes. Verified all 10 native host test suites ALL PASS via run_engine_suite.py."
 last_run_date: 2026-09-29
 
 ## rules (لا تُكسر)
