@@ -409,16 +409,20 @@ double gml_instance_find(double object_index, double n) {
 double gml_distance_to_object(double object_index) {
     if (!g_rt || !g_self) return 1000000;
     int32_t oi = (int32_t)object_index;
-    double best = 1e300;
+    /* ⚡ Bolt Optimization:
+     * Compare squared distances (dx*dx + dy*dy) in inner instance loop to eliminate
+     * N floating-point sqrt() operations per function call, computing sqrt() at most once at the end.
+     */
+    double best_sq = 1e300;
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive || o == g_self) continue;
         if (oi >= 0 && o->object_index != oi) continue;
         double dx = o->x - g_self->x, dy = o->y - g_self->y;
-        double d = sqrt(dx*dx + dy*dy);
-        if (d < best) best = d;
+        double d_sq = dx*dx + dy*dy;
+        if (d_sq < best_sq) best_sq = d_sq;
     }
-    return best > 1e299 ? 1000000 : best;
+    return best_sq > 1e299 ? 1000000 : sqrt(best_sq);
 }
 
 double gml_point_in_rectangle(double px, double py, double x1, double y1, double x2, double y2) {
@@ -433,6 +437,11 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
     if (x1 > x2) { double t=x1; x1=x2; x2=t; }
     if (y1 > y2) { double t=y1; y1=y2; y2=t; }
     int32_t oi = (int32_t)obj;
+    /* ⚡ Bolt Optimization:
+     * Precompute query rectangle width and height outside instance loop to avoid redundant subtraction.
+     */
+    double rw = x2 - x1;
+    double rh = y2 - y1;
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
         if (!o->alive) continue;
@@ -440,7 +449,7 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x1, y1, x2-x1, y2-y1, o->x, o->y, ow, oh))
+        if (aabb_overlap(x1, y1, rw, rh, o->x, o->y, ow, oh))
             return (double)o->id;
     }
     return -4;
