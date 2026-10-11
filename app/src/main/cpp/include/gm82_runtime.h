@@ -3,6 +3,7 @@
 
 #include "gm82_object_room_decode.h"
 #include "gm82_sprite_decode.h"
+#include "gm82_script.h"
 /* sprite groups via gm82_sprite_group_list */
 #include "gm82_background_decode.h"
 #include <stdint.h>
@@ -67,6 +68,7 @@ typedef struct {
     const gm82_decoded_background_list *backgrounds;
     const gm82_decoded_room_list       *rooms;
     const gm82_action_table            *actions;
+    const gm82_script_list             *scripts;
 
     int32_t frame;
     int32_t running;
@@ -84,6 +86,7 @@ void gm82_runtime_bind_assets(gm82_runtime *rt,
     const gm82_decoded_room_list *rooms,
     const gm82_action_table *actions);
 void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_list *groups);
+void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts);
 /* Fire user event 0..11 on all instances (or self if provided via events later) */
 void gm82_runtime_event_user(gm82_runtime *rt, int user_event_index);
 

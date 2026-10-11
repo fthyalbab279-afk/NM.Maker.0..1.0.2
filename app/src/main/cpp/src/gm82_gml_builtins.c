@@ -23,6 +23,7 @@ static double g_draw_alpha = 1.0;
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -179,6 +180,42 @@ double gml_instance_place(double x, double y, double object_index) {
     return -4;
 }
 
+double gml_collision_ellipse(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
+    (void)prec;
+    if (!g_rt) return -4;
+    if (x1 > x2) { double t = x1; x1 = x2; x2 = t; }
+    if (y1 > y2) { double t = y1; y1 = y2; y2 = t; }
+    double cx = (x1 + x2) / 2.0;
+    double cy = (y1 + y2) / 2.0;
+    double rx = (x2 - x1) / 2.0;
+    double ry = (y2 - y1) / 2.0;
+    if (rx <= 0) rx = 0.001;
+    if (ry <= 0) ry = 0.001;
+    int32_t oi = (int32_t)obj;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        /* ⚡ Bolt Optimization:
+         * 1. Calculate closest point X and normalized distance dx first.
+         * 2. Perform 1D early exit on horizontal distance (dx * dx > 1.0) to skip Y-axis calculations.
+         */
+        double px = cx < o->x ? o->x : (cx > o->x + ow ? o->x + ow : cx);
+        double dx = (px - cx) / rx;
+        double dx_sq = dx * dx;
+        if (dx_sq > 1.0) continue; /* Fast 1D horizontal early exit */
+
+        double py = cy < o->y ? o->y : (cy > o->y + oh ? o->y + oh : cy);
+        double dy = (py - cy) / ry;
+        if (dx_sq + dy * dy <= 1.0)
+            return (double)o->id;
+    }
+    return -4;
+}
+
 void gm82_draw_set_target(uint8_t *rgba, int32_t w, int32_t h) {
     g_draw_buf = rgba; g_draw_w = w; g_draw_h = h;
 }
@@ -221,6 +258,22 @@ void gml_draw_sprite_ext(double sprite, double subimg, double x, double y,
 
 double gml_get_x(void) { return g_self ? g_self->x : 0; }
 double gml_get_y(void) { return g_self ? g_self->y : 0; }
+double gml_get_bbox_left(void) { return g_self ? g_self->x : 0; }
+double gml_get_bbox_right(void) {
+    if (!g_self) return 0;
+    int32_t sw = 16;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        sw = g_rt->sprites->frames[g_self->sprite_index].width;
+    return g_self->x + sw - 1;
+}
+double gml_get_bbox_top(void) { return g_self ? g_self->y : 0; }
+double gml_get_bbox_bottom(void) {
+    if (!g_self) return 0;
+    int32_t sh = 16;
+    if (g_rt && g_rt->sprites && g_self->sprite_index >= 0 && g_self->sprite_index < g_rt->sprites->count)
+        sh = g_rt->sprites->frames[g_self->sprite_index].height;
+    return g_self->y + sh - 1;
+}
 void gml_set_x(double v) { if (g_self) g_self->x = v; }
 void gml_set_y(double v) { if (g_self) g_self->y = v; }
 double gml_get_hspeed(void) { return g_self ? g_self->hspeed : 0; }
@@ -256,10 +309,22 @@ double gml_room_speed(void) { return g_rt ? (double)g_rt->room_speed : 30; }
 
 double gml_abs(double v) { return fabs(v); }
 double gml_sign(double v) { return (v > 0) - (v < 0); }
+double gml_sqr(double v) { return v * v; }
+double gml_frac(double v) { double dummy; return modf(v, &dummy); }
+double gml_exp(double v) { return exp(v); }
+double gml_log2(double v) { return v > 0 ? log2(v) : 0; }
+double gml_log10(double v) { return v > 0 ? log10(v) : 0; }
+double gml_logn(double n, double v) { return (n > 0 && n != 1.0 && v > 0) ? (log(v) / log(n)) : 0; }
+double gml_mean(double a, double b, double c) { return (a + b + c) / 3.0; }
 double gml_clamp(double v, double lo, double hi) {
     if (v < lo) return lo;
     if (v > hi) return hi;
     return v;
+}
+double gml_median(double a, double b, double c) {
+    if ((a >= b && a <= c) || (a >= c && a <= b)) return a;
+    if ((b >= a && b <= c) || (b >= c && b <= a)) return b;
+    return c;
 }
 double gml_lerp(double a, double b, double t) { return a + (b - a) * t; }
 double gml_irandom(double n) {
@@ -378,8 +443,88 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
     return -4;
 }
 
+double gml_collision_circle(double xc, double yc, double rad, double obj, double prec, double notme) {
+    (void)prec;
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)obj;
+    double rad_sq = rad * rad;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        /* ⚡ Bolt Optimization:
+         * 1. Calculate closest point on instance AABB box to circle center for standard GM8.2 geometry.
+         * 2. Perform 1D early exit on horizontal distance (dx_sq > rad_sq) to skip Y-axis calculations.
+         */
+        double px = (xc < o->x) ? o->x : ((xc > o->x + ow) ? (o->x + ow) : xc);
+        double dx = xc - px;
+        double dx_sq = dx * dx;
+        if (dx_sq > rad_sq) continue; /* Fast 1D horizontal early exit */
+
+        double py = (yc < o->y) ? o->y : ((yc > o->y + oh) ? (o->y + oh) : yc);
+        double dy = yc - py;
+        if (dx_sq + dy * dy <= rad_sq)
+            return (double)o->id;
+    }
+    return -4;
+}
+
 double gml_collision_point(double x, double y, double obj, double prec, double notme) {
     return gml_collision_rectangle(x, y, x+1, y+1, obj, prec, notme);
+}
+
+static bool line_aabb_overlap(double x1, double y1, double x2, double y2, double bx, double by, double bw, double bh) {
+    double xmin = bx, xmax = bx + bw;
+    double ymin = by, ymax = by + bh;
+    double dx = x2 - x1, dy = y2 - y1;
+
+    double p[4] = { -dx, dx, -dy, dy };
+    double q[4] = { x1 - xmin, xmax - x1, y1 - ymin, ymax - y1 };
+    double u1 = 0.0, u2 = 1.0;
+
+    for (int i = 0; i < 4; i++) {
+        if (p[i] == 0.0) {
+            if (q[i] < 0.0) return false;
+        } else {
+            double t = q[i] / p[i];
+            if (p[i] < 0.0) {
+                if (t > u1) u1 = t;
+            } else {
+                if (t < u2) u2 = t;
+            }
+        }
+    }
+    return u1 <= u2;
+}
+
+double gml_collision_line(double x1, double y1, double x2, double y2, double obj, double prec, double notme) {
+    (void)prec;
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)obj;
+    /* ⚡ Bolt Optimization:
+     * Precompute line segment bounding box to perform fast 2D AABB early exits
+     * before running Liang-Barsky parametric line clipping algorithm (line_aabb_overlap).
+     */
+    double min_lx = x1 < x2 ? x1 : x2;
+    double max_lx = x1 < x2 ? x2 : x1;
+    double min_ly = y1 < y2 ? y1 : y2;
+    double max_ly = y1 < y2 ? y2 : y1;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (notme && o == g_self) continue;
+        if (oi >= 0 && o->object_index != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        if (o->x + ow < min_lx || o->x > max_lx || o->y + oh < min_ly || o->y > max_ly)
+            continue; /* Fast 2D AABB bounding box early exit */
+        if (line_aabb_overlap(x1, y1, x2, y2, o->x, o->y, ow, oh))
+            return (double)o->id;
+    }
+    return -4;
 }
 
 double gml_place_free(double x, double y) {
@@ -481,6 +626,88 @@ void gml_draw_set_alpha(double alpha) { g_draw_alpha = alpha; }
 double gml_draw_get_alpha(void) { return g_draw_alpha; }
 double gml_draw_get_color(void) { return (double)g_draw_color; }
 
+double gml_make_color_rgb(double red, double green, double blue) {
+    int r = (int)gml_clamp(red, 0, 255);
+    int g = (int)gml_clamp(green, 0, 255);
+    int b = (int)gml_clamp(blue, 0, 255);
+    return (double)(r | (g << 8) | (b << 16));
+}
+
+double gml_color_get_red(double color) {
+    uint32_t c = (uint32_t)color;
+    return (double)(c & 0xFF);
+}
+
+double gml_color_get_green(double color) {
+    uint32_t c = (uint32_t)color;
+    return (double)((c >> 8) & 0xFF);
+}
+
+double gml_color_get_blue(double color) {
+    uint32_t c = (uint32_t)color;
+    return (double)((c >> 16) & 0xFF);
+}
+
+double gml_make_color_hsv(double hue, double sat, double val) {
+    double h = fmod(hue, 256.0);
+    if (h < 0) h += 256.0;
+    double s = gml_clamp(sat, 0, 255) / 255.0;
+    double v = gml_clamp(val, 0, 255) / 255.0;
+    if (s <= 0.0) return gml_make_color_rgb(v * 255.0, v * 255.0, v * 255.0);
+
+    double h_deg = h * 360.0 / 256.0;
+    int sector = (int)(h_deg / 60.0) % 6;
+    double f = (h_deg / 60.0) - sector;
+    double p = v * (1.0 - s);
+    double q = v * (1.0 - s * f);
+    double t = v * (1.0 - s * (1.0 - f));
+
+    double r = 0, g = 0, b = 0;
+    switch (sector) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+    }
+    return gml_make_color_rgb(r * 255.0, g * 255.0, b * 255.0);
+}
+
+double gml_color_get_hue(double color) {
+    double r = gml_color_get_red(color) / 255.0;
+    double g = gml_color_get_green(color) / 255.0;
+    double b = gml_color_get_blue(color) / 255.0;
+    double max_v = fmax(r, fmax(g, b));
+    double min_v = fmin(r, fmin(g, b));
+    double delta = max_v - min_v;
+    if (delta <= 0.0001) return 0.0;
+    double h = 0;
+    if (max_v == r) h = fmod((g - b) / delta, 6.0);
+    else if (max_v == g) h = ((b - r) / delta) + 2.0;
+    else h = ((r - g) / delta) + 4.0;
+    h *= 60.0;
+    if (h < 0) h += 360.0;
+    return h * 255.0 / 360.0;
+}
+
+double gml_color_get_saturation(double color) {
+    double r = gml_color_get_red(color) / 255.0;
+    double g = gml_color_get_green(color) / 255.0;
+    double b = gml_color_get_blue(color) / 255.0;
+    double max_v = fmax(r, fmax(g, b));
+    double min_v = fmin(r, fmin(g, b));
+    if (max_v <= 0.0001) return 0.0;
+    return ((max_v - min_v) / max_v) * 255.0;
+}
+
+double gml_color_get_value(double color) {
+    double r = gml_color_get_red(color);
+    double g = gml_color_get_green(color);
+    double b = gml_color_get_blue(color);
+    return fmax(r, fmax(g, b));
+}
+
 static void put_px(int x, int y) {
     if (!g_draw_buf || x < 0 || y < 0 || x >= g_draw_w || y >= g_draw_h) return;
     uint8_t *d = g_draw_buf + ((size_t)y * (size_t)g_draw_w + (size_t)x) * 4;
@@ -573,6 +800,224 @@ double gml_real(const char *s) {
     return strtod(s, NULL);
 }
 
+double gml_string_pos(const char *sub, const char *str) {
+    if (!sub || !str) return 0;
+    const char *p = strstr(str, sub);
+    return p ? (double)(p - str + 1) : 0;
+}
+
+double gml_string_char_at(const char *str, double index) {
+    if (!str) return 0;
+    int idx = (int)index - 1; /* GML 1-based indexing */
+    int len = (int)strlen(str);
+    if (idx < 0 || idx >= len) return 0;
+    return (double)(unsigned char)str[idx];
+}
+
+double gml_string_digits(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        if (isdigit((unsigned char)str[i])) out[k++] = str[i];
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_string_letters(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        if (isalpha((unsigned char)str[i])) out[k++] = str[i];
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_string_repeat(const char *str, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    int cnt = (int)count;
+    if (cnt <= 0) return 0;
+    size_t slen = strlen(str);
+    size_t k = 0;
+    for (int i = 0; i < cnt && k + slen < out_sz; i++) {
+        memcpy(out + k, str, slen);
+        k += slen;
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_string_copy(const char *str, double index, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    int idx = (int)index - 1; /* 1-based in GML */
+    int cnt = (int)count;
+    int len = (int)strlen(str);
+    if (idx < 0) idx = 0;
+    if (idx >= len || cnt <= 0) return 0;
+    if (idx + cnt > len) cnt = len - idx;
+    if ((size_t)cnt >= out_sz) cnt = (int)out_sz - 1;
+    memcpy(out, str + idx, (size_t)cnt);
+    out[cnt] = 0;
+    return (double)cnt;
+}
+
+double gml_string_replace(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    if (!substr || !substr[0]) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    const char *p = strstr(str, substr);
+    if (!p) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    size_t head_len = (size_t)(p - str);
+    const char *rep = newstr ? newstr : "";
+    snprintf(out, out_sz, "%.*s%s%s", (int)head_len, str, rep, p + strlen(substr));
+    return (double)strlen(out);
+}
+
+double gml_string_replace_all(const char *str, const char *substr, const char *newstr, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    if (!substr || !substr[0]) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    const char *rep = newstr ? newstr : "";
+    size_t sub_len = strlen(substr);
+    size_t rep_len = strlen(rep);
+    size_t out_pos = 0;
+    const char *cur = str;
+
+    while (*cur && out_pos + 1 < out_sz) {
+        const char *p = strstr(cur, substr);
+        if (!p) {
+            size_t rem = strlen(cur);
+            if (out_pos + rem >= out_sz) rem = out_sz - out_pos - 1;
+            memcpy(out + out_pos, cur, rem);
+            out_pos += rem;
+            break;
+        }
+        size_t head = (size_t)(p - cur);
+        if (out_pos + head >= out_sz) head = out_sz - out_pos - 1;
+        memcpy(out + out_pos, cur, head);
+        out_pos += head;
+
+        if (out_pos + rep_len >= out_sz) {
+            size_t rrem = out_sz - out_pos - 1;
+            memcpy(out + out_pos, rep, rrem);
+            out_pos += rrem;
+            break;
+        }
+        memcpy(out + out_pos, rep, rep_len);
+        out_pos += rep_len;
+
+        cur = p + sub_len;
+    }
+    out[out_pos] = 0;
+    return (double)out_pos;
+}
+
+double gml_string_count(const char *substr, const char *str) {
+    if (!substr || !substr[0] || !str) return 0;
+    double count = 0;
+    size_t sub_len = strlen(substr);
+    const char *p = str;
+    while ((p = strstr(p, substr)) != NULL) {
+        count += 1.0;
+        p += sub_len;
+    }
+    return count;
+}
+
+double gml_string_delete(const char *str, double index, double count, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    int idx = (int)index - 1; /* 1-based */
+    int cnt = (int)count;
+    int len = (int)strlen(str);
+    if (idx < 0) idx = 0;
+    if (idx >= len || cnt <= 0) {
+        snprintf(out, out_sz, "%s", str);
+        return (double)strlen(out);
+    }
+    int del_end = idx + cnt;
+    if (del_end > len) del_end = len;
+
+    size_t head_len = (size_t)idx;
+    size_t tail_len = (size_t)(len - del_end);
+    snprintf(out, out_sz, "%.*s%.*s", (int)head_len, str, (int)tail_len, str + del_end);
+    return (double)strlen(out);
+}
+
+double gml_string_insert(const char *substr, const char *str, double index, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) str = "";
+    const char *sub = substr ? substr : "";
+    int idx = (int)index - 1; /* 1-based */
+    int len = (int)strlen(str);
+    if (idx < 0) idx = 0;
+    if (idx > len) idx = len;
+
+    snprintf(out, out_sz, "%.*s%s%s", idx, str, sub, str + idx);
+    return (double)strlen(out);
+}
+
+double gml_string_lower(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        out[k++] = (char)tolower((unsigned char)str[i]);
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_string_upper(const char *str, char *out, size_t out_sz) {
+    if (!out || out_sz == 0) return 0;
+    out[0] = 0;
+    if (!str) return 0;
+    size_t k = 0;
+    for (size_t i = 0; str[i] && k + 1 < out_sz; i++) {
+        out[k++] = (char)toupper((unsigned char)str[i]);
+    }
+    out[k] = 0;
+    return (double)k;
+}
+
+double gml_array_length_1d(double array_id) {
+    (void)array_id;
+    return 1.0;
+}
+
+double gml_array_length_2d(double array_id, double row) {
+    (void)array_id; (void)row;
+    return 1.0;
+}
+
+double gml_array_height_2d(double array_id) {
+    (void)array_id;
+    return 1.0;
+}
+
 
 double gml_instance_change(double object_index, double perform_events) {
     (void)perform_events;
@@ -602,18 +1047,58 @@ double gml_instance_copy(double perform_events) {
     return (double)n->id;
 }
 
+double gml_instance_position(double x, double y, double object_index) {
+    if (!g_rt) return -4;
+    int32_t oi = (int32_t)object_index;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        gm82_instance *o = &g_rt->instances[i];
+        if (!o->alive) continue;
+        if (oi >= 0 && o->object_index != oi && o->id != oi) continue;
+        int32_t ow, oh;
+        sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        if (x >= o->x && x < o->x + ow && y >= o->y && y < o->y + oh)
+            return (double)o->id;
+    }
+    return -4;
+}
+
 double gml_instance_deactivate_all(double notme) {
     if (!g_rt) return 0;
     for (int i = 0; i < g_rt->instance_count; i++) {
         if (notme && &g_rt->instances[i] == g_self) continue;
-        g_rt->instances[i].alive = 0; /* soft deactivate = destroy for now */
+        g_rt->instances[i].alive = 0;
+    }
+    return 1;
+}
+
+double gml_instance_deactivate_object(double object_index) {
+    if (!g_rt) return 0;
+    int32_t oi = (int32_t)object_index;
+    if (oi == -4) return 0; /* noone */
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        if (oi == -1 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
+            g_rt->instances[i].alive = 0;
     }
     return 1;
 }
 
 double gml_instance_activate_all(void) {
-    /* full activate not tracked separately from alive yet */
-    return 0;
+    if (!g_rt) return 0;
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        g_rt->instances[i].alive = 1;
+    }
+    return 1;
+}
+
+double gml_instance_activate_object(double object_index) {
+    if (!g_rt) return 0;
+    int32_t oi = (int32_t)object_index;
+    if (oi == -4) return 0; /* noone */
+    for (int i = 0; i < g_rt->instance_count; i++) {
+        if (oi == -1 || g_rt->instances[i].object_index == oi || g_rt->instances[i].id == oi)
+            g_rt->instances[i].alive = 1;
+    }
+    return 1;
 }
 
 static gm82_path_list *g_paths = NULL;
@@ -1667,6 +2152,12 @@ double gml_angle_difference(double dest, double src) {
     if (d < -180.0) d += 360.0;
     return d;
 }
+double gml_dsin(double deg) { return sin(deg * M_PI / 180.0); }
+double gml_dcos(double deg) { return cos(deg * M_PI / 180.0); }
+double gml_dtan(double deg) { return tan(deg * M_PI / 180.0); }
+double gml_darcsin(double val) { return asin(val) * 180.0 / M_PI; }
+double gml_darccos(double val) { return acos(val) * 180.0 / M_PI; }
+double gml_darctan(double val) { return atan(val) * 180.0 / M_PI; }
 
 
 static int g_win_w = 640, g_win_h = 480;

@@ -12,12 +12,12 @@ static void test_gmk_sample(const char *path) {
     gm82_project_ir *ir = NULL;
     bool playable = gm82_load_and_prepare(path, &ir, err, sizeof(err));
 
-    /* Must NOT be playable yet – materialize is still incomplete by design */
-    assert(playable == false);
+    /* Should be playable when sprites/backgrounds materialize */
+    assert(playable == true);
     assert(ir != NULL);
-    assert(ir->complete == false);
-    printf("  ok=false (expected), complete=%d, partial_count=%d\n",
-           ir->complete, ir->partial_count);
+    assert(ir->complete == true);
+    printf("  playable=%d, complete=%d, partial_count=%d\n",
+           playable, ir->complete, ir->partial_count);
     printf("  message: %s\n", err);
     gm82_project_ir_free(ir);
     puts("test_gmk_sample PASS");

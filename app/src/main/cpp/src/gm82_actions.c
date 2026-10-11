@@ -210,14 +210,15 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     gm82_gml_set_runtime(rt);
     gm82_gml_set_self(self);
     if (strcmp(ar->name, "action_sprite_set") == 0) {
-        if (ar->action_id >= 0) self->sprite_index = ar->action_id;
+        self->sprite_index = ar->action_id >= 0 ? ar->action_id : (ar->kind >= 0 ? ar->kind : 1);
         return true;
     }
     if (strcmp(ar->name, "action_change_object") == 0) {
-        if (ar->action_id >= 0 && rt->objects && ar->action_id < rt->objects->count) {
-            self->object_index = ar->action_id;
-            self->sprite_index = rt->objects->items[ar->action_id].sprite_index;
-            self->solid = rt->objects->items[ar->action_id].solid;
+        int target_oi = ar->action_id >= 0 ? ar->action_id : ar->kind;
+        if (rt->objects && target_oi >= 0 && target_oi < rt->objects->count) {
+            self->object_index = target_oi;
+            self->sprite_index = rt->objects->items[target_oi].sprite_index;
+            self->solid = rt->objects->items[target_oi].solid;
         }
         return true;
     }
@@ -304,6 +305,39 @@ static bool execute_ref(gm82_runtime *rt, gm82_instance *self, const gm82_action
     if (strcmp(ar->name, "action_create_object") == 0) {
         int oi = ar->action_id;
         gm82_runtime_instance_create(rt, oi, self->x, self->y);
+        return true;
+    }
+    if (strcmp(ar->name, "action_create_object_motion") == 0) {
+        int oi = ar->action_id;
+        gm82_instance *inst = gm82_runtime_instance_create(rt, oi, self->x, self->y);
+        if (inst) {
+            inst->speed = (double)ar->kind;
+            inst->direction = (double)ar->event_numb;
+        }
+        return true;
+    }
+    if (strcmp(ar->name, "action_restart_game") == 0) {
+        gml_game_restart();
+        return true;
+    }
+    if (strcmp(ar->name, "action_end_game") == 0) {
+        gml_game_end();
+        return true;
+    }
+    if (strcmp(ar->name, "action_previous_room") == 0) {
+        gml_room_previous();
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_score") == 0) {
+        gml_set_score((double)ar->action_id);
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_lives") == 0) {
+        gml_set_lives((double)ar->action_id);
+        return true;
+    }
+    if (strcmp(ar->name, "action_set_health") == 0) {
+        gml_set_health((double)ar->action_id);
         return true;
     }
     return false;

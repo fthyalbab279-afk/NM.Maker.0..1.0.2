@@ -35,6 +35,12 @@ void gm82_runtime_bind_sprite_groups(gm82_runtime *rt, const gm82_sprite_group_l
     rt->sprite_groups = groups;
 }
 
+void gm82_runtime_bind_scripts(gm82_runtime *rt, const gm82_script_list *scripts) {
+    if (!rt) return;
+    rt->scripts = scripts;
+    if (scripts) gm82_scripts_bind((gm82_script_list *)scripts);
+}
+
 static void apply_object_defaults(gm82_runtime *rt, gm82_instance *inst, int32_t object_index) {
     inst->object_index = object_index;
     inst->sprite_index = -1;

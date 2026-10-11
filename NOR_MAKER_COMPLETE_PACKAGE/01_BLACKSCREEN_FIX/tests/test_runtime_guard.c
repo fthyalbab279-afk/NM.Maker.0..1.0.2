@@ -48,6 +48,7 @@ static void test_playable_ir(void) {
     ir->sprites[0].height = 16;
     ir->sprites[0].subimage_count = 1;
     ir->sprites[0].status = GM82_RES_DECODED;
+    ir->sprites[0].rgba = calloc(1, 16 * 16 * 4);
 
     ir->background_count = 0;
 

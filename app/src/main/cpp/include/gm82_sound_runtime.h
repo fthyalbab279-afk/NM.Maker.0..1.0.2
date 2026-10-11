@@ -32,6 +32,9 @@ typedef struct {
 void gm82_sound_runtime_init(gm82_sound_runtime *sr);
 void gm82_sound_runtime_bind(gm82_sound_runtime *sr, const gm82_decoded_sound_list *sounds);
 
+/* Enqueue audio command for Android JNI / AudioTrack bridge */
+void gm82_enqueue_sound_command(int kind, int soundId, int loop, int prio, float volume);
+
 /* Returns 1 if sound index valid and queued, 0 otherwise */
 int gm82_sound_play(gm82_sound_runtime *sr, int sound_index, int loop);
 int gm82_sound_play_by_name(gm82_sound_runtime *sr, const char *name, int loop);
@@ -45,6 +48,8 @@ double gml_sound_stop_all(void);
 double gml_sound_is_playing(double sound_index); /* always 0 without device */
 double gml_sound_exists(double sound_index);
 double gml_sound_volume(double sound_index, double volume);
+double gml_sound_pitch(double sound_index, double pitch);
+double gml_sound_pan(double sound_index, double pan);
 double gml_sound_get_name_count(void);
 
 #ifdef __cplusplus

@@ -16,17 +16,22 @@ void gm82_sound_runtime_bind(gm82_sound_runtime *sr, const gm82_decoded_sound_li
     sr->sounds = sounds;
 }
 
+__attribute__((weak)) void gm82_enqueue_sound_command(int kind, int soundId, int loop, int prio, float volume) {
+    (void)kind; (void)soundId; (void)loop; (void)prio; (void)volume;
+}
+
 int gm82_sound_play(gm82_sound_runtime *sr, int sound_index, int loop) {
     if (!sr) return 0;
     sr->play_count++;
     sr->last_played_index = sound_index;
+    double vol = (sr->sounds && sound_index >= 0 && sound_index < sr->sounds->count) ? sr->sounds->items[sound_index].volume : 1.0;
     if (sr->queue_len < 32) {
         sr->queue[sr->queue_len].sound_index = sound_index;
-        sr->queue[sr->queue_len].volume = (sr->sounds && sound_index >= 0 && sound_index < sr->sounds->count) ? sr->sounds->items[sound_index].volume : 1.0;
+        sr->queue[sr->queue_len].volume = vol;
         sr->queue[sr->queue_len].loop = loop;
         sr->queue_len++;
     }
-    /* No device – event queued only */
+    gm82_enqueue_sound_command(1, sound_index, loop, 0, (float)vol);
     return 1;
 }
 
@@ -103,6 +108,25 @@ double gml_sound_volume(double sound_index, double volume) {
     if (volume > 1) volume = 1;
     /* stored on decoded meta – actual gain needs device */
     ((gm82_decoded_sound *)g_sr->sounds->items)[i].volume = volume;
+    return 1;
+}
+
+double gml_sound_pitch(double sound_index, double pitch) {
+    if (!g_sr || !g_sr->sounds) return 0;
+    int i = (int)sound_index;
+    if (i < 0 || i >= g_sr->sounds->count) return 0;
+    if (pitch <= 0) pitch = 0.1;
+    gm82_enqueue_sound_command(3, i, 0, 0, (float)pitch);
+    return 1;
+}
+
+double gml_sound_pan(double sound_index, double pan) {
+    if (!g_sr || !g_sr->sounds) return 0;
+    int i = (int)sound_index;
+    if (i < 0 || i >= g_sr->sounds->count) return 0;
+    if (pan < -1.0) pan = -1.0;
+    if (pan > 1.0) pan = 1.0;
+    gm82_enqueue_sound_command(4, i, 0, 0, (float)pan);
     return 1;
 }
 
