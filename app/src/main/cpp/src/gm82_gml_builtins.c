@@ -191,6 +191,8 @@ double gml_collision_ellipse(double x1, double y1, double x2, double y2, double 
     double ry = (y2 - y1) / 2.0;
     if (rx <= 0) rx = 0.001;
     if (ry <= 0) ry = 0.001;
+    double inv_rx = 1.0 / rx;
+    double inv_ry = 1.0 / ry;
     int32_t oi = (int32_t)obj;
     for (int i = 0; i < g_rt->instance_count; i++) {
         gm82_instance *o = &g_rt->instances[i];
@@ -199,11 +201,22 @@ double gml_collision_ellipse(double x1, double y1, double x2, double y2, double 
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        double px = cx < o->x ? o->x : (cx > o->x + ow ? o->x + ow : cx);
-        double py = cy < o->y ? o->y : (cy > o->y + oh ? o->y + oh : cy);
-        double dx = (px - cx) / rx;
-        double dy = (py - cy) / ry;
-        if (dx * dx + dy * dy <= 1.0)
+        /* ⚡ Bolt Optimization:
+         * 1. 2D AABB bounding box pre-filter to reject disjoint instances.
+         * 2. Precomputed inverse radii (inv_rx, inv_ry) to replace division with multiplication.
+         * 3. 1D horizontal distance early exit (dx_sq > 1.0) to bypass Y-axis checks.
+         */
+        if (o->x + ow < x1 || o->x > x2 || o->y + oh < y1 || o->y > y2)
+            continue; /* Fast 2D AABB pre-filter exit */
+
+        double px = (cx < o->x) ? o->x : ((cx > o->x + ow) ? (o->x + ow) : cx);
+        double dx = (px - cx) * inv_rx;
+        double dx_sq = dx * dx;
+        if (dx_sq > 1.0) continue; /* Fast 1D horizontal early exit */
+
+        double py = (cy < o->y) ? o->y : ((cy > o->y + oh) ? (o->y + oh) : cy);
+        double dy = (py - cy) * inv_ry;
+        if (dx_sq + dy * dy <= 1.0)
             return (double)o->id;
     }
     return -4;
@@ -430,7 +443,11 @@ double gml_collision_rectangle(double x1, double y1, double x2, double y2, doubl
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
-        if (aabb_overlap(x1, y1, x2-x1, y2-y1, o->x, o->y, ow, oh))
+        /* ⚡ Bolt Optimization:
+         * Inline direct AABB bounding box check to eliminate per-instance width/height
+         * subtractions (x2-x1, y2-y1) and function call overhead.
+         */
+        if (o->x < x2 && o->x + ow > x1 && o->y < y2 && o->y + oh > y1)
             return (double)o->id;
     }
     return -4;
