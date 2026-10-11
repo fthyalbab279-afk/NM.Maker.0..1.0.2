@@ -8,8 +8,8 @@ release_tag: HOST_PROTOTYPE
 last_result: PASS
 last_test_log: "Implemented additional GML math built-ins (sqr, frac, exp, log2, log10, logn, mean) in gm82_gml_builtins.c and verified via test_gml_comprehensive.c. Verified all 9 native host test suites (test_full_suite, test_runtime_guard, test_dual_load, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_4_game_smoke, test_mario_physics_parity) ALL PASS via run_engine_suite.py."
 last_test_log: "Phase 5 PASS: Implemented GML math built-ins (sqr, frac, exp, log2, log10, logn, mean) in gm82_gml_builtins.c and verified with test_gml_comprehensive.c. All 9 host test suites ALL PASS."
-last_test_log: "Phase 6 PASS: Enhanced .gm82 text project parser in gm82_text_reader.c to scan resource folder trees (sprites, objects, sounds, scripts, backgrounds, rooms) and construct Project IR nodes. Verified all 10 native host test suites ALL PASS via run_engine_suite.py."
-last_run_date: 2026-09-29
+last_test_log: "Phase 5 PASS: Added evaluation dispatch for GML math angle and selection functions (deg_to_rad, rad_to_deg, angle_difference, choose) in gm82_gml_eval.c and verified with test_gml_comprehensive.c. Verified all 10 native host test suites ALL PASS via run_engine_suite.py."
+last_run_date: 2026-10-11
 
 ## rules (لا تُكسر)
 - never claim 100%
@@ -23,7 +23,7 @@ Control loops (while, repeat, do...until, if), AST GML evaluation, string/math/a
 
 ## required_reply_format
 PROGRESS: 48% (<50% compared to full Windows GM82)
-DONE: Updated gm82_script.c GML script prefix decoding and validated JNI native symbol compilation in gm82_jni.c.
+DONE: Added GML VM evaluation dispatch for deg_to_rad, rad_to_deg, angle_difference, and choose in gm82_gml_eval.c, with unit tests in test_gml_comprehensive.c.
 TEST: All 10 native C host test suites passing (test_full_suite, test_runtime_guard, test_dual_load, test_4_game_smoke, test_mario_physics_parity, test_gml_comprehensive, test_gml_vm_execution, test_gml_vm_expanded, test_gml_ds_collisions, test_paths_particles_mpgrid ALL PASS).
 RESULT: PASS
 REMAINING: GLES Hardware Rendering, OpenSL ES Audio Backend, full GML VM bytecode compiler, precise per-pixel collisions, Android device hardware testing.

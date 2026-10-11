@@ -108,6 +108,16 @@ int main(void) {
     assert(gml_abs(gml_darccos(1.0) - 0.0) < 1e-6);
     assert(gml_abs(gml_darctan(1.0) - 45.0) < 1e-6);
 
+    /* Test evaluation of deg_to_rad, rad_to_deg, angle_difference, and choose in GML VM */
+    gm82_gml_eval_expr(&rt, inst, "deg_to_rad(180)", &res);
+    assert(gml_abs(res - 3.1415926535) < 1e-5);
+    gm82_gml_eval_expr(&rt, inst, "rad_to_deg(3.1415926535)", &res);
+    assert(gml_abs(res - 180.0) < 1e-3);
+    gm82_gml_eval_expr(&rt, inst, "angle_difference(90, 0)", &res);
+    assert(gml_abs(res - 90.0) < 1e-6);
+    gm82_gml_eval_expr(&rt, inst, "choose(10, 20)", &res);
+    assert(res == 10.0 || res == 20.0);
+
     puts("GML_COMPREHENSIVE_VM_TEST_PASS");
     return 0;
 }

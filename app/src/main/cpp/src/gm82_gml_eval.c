@@ -426,6 +426,22 @@ static bool parse_primary(gml_parser *p, double *out) {
             *out = gml_lengthdir_y(args[0], args[1]);
             return true;
         }
+        if (strcmp(id, "deg_to_rad") == 0) {
+            *out = gml_deg_to_rad(args[0]);
+            return true;
+        }
+        if (strcmp(id, "rad_to_deg") == 0) {
+            *out = gml_rad_to_deg(args[0]);
+            return true;
+        }
+        if (strcmp(id, "angle_difference") == 0) {
+            *out = gml_angle_difference(args[0], (nargs >= 2) ? args[1] : 0);
+            return true;
+        }
+        if (strcmp(id, "choose") == 0) {
+            *out = gml_choose(args[0], (nargs >= 2) ? args[1] : args[0]);
+            return true;
+        }
         if (strcmp(id, "instance_destroy") == 0) {
             gml_instance_destroy();
             *out = 1; return true;
