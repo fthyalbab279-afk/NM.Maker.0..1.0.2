@@ -199,11 +199,21 @@ double gml_collision_ellipse(double x1, double y1, double x2, double y2, double 
         if (oi >= 0 && o->object_index != oi) continue;
         int32_t ow, oh;
         sprite_size(g_rt, o->sprite_index, &ow, &oh);
+        /* ⚡ Bolt Optimization:
+         * 1. 2D AABB bounding box pre-filter to bypass instances completely outside the ellipse bounding box.
+         * 2. 1D horizontal distance early exit (dx*dx > 1.0) to skip Y-axis distance calculations.
+         */
+        if (o->x + ow < x1 || o->x > x2 || o->y + oh < y1 || o->y > y2)
+            continue; /* Fast 2D AABB bounding box pre-filter */
+
         double px = cx < o->x ? o->x : (cx > o->x + ow ? o->x + ow : cx);
-        double py = cy < o->y ? o->y : (cy > o->y + oh ? o->y + oh : cy);
         double dx = (px - cx) / rx;
+        double dx_sq = dx * dx;
+        if (dx_sq > 1.0) continue; /* Fast 1D horizontal distance early exit */
+
+        double py = cy < o->y ? o->y : (cy > o->y + oh ? o->y + oh : cy);
         double dy = (py - cy) / ry;
-        if (dx * dx + dy * dy <= 1.0)
+        if (dx_sq + dy * dy <= 1.0)
             return (double)o->id;
     }
     return -4;
