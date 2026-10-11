@@ -97,6 +97,14 @@ static void test_collision_functions(gm82_runtime *rt) {
     assert(gml_collision_ellipse(80.0, 80.0, 120.0, 120.0, 1, 0, 0) == (double)inst->id);
     assert(gml_collision_ellipse(0.0, 0.0, 20.0, 20.0, 1, 0, 0) == -4.0);
 
+    /* Distance to object tests */
+    gm82_instance *src = gm82_runtime_instance_create(rt, 0, 70.0, 60.0);
+    assert(src != NULL);
+    gm82_gml_set_self(src);
+    /* dx = 100-70 = 30, dy = 100-60 = 40, distance = sqrt(30^2 + 40^2) = 50.0 */
+    assert(gml_distance_to_object(1) == 50.0);
+    assert(gml_distance_to_object(999) == 1000000.0);
+
     puts("test_collision_functions PASS");
 }
 

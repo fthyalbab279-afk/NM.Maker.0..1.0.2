@@ -430,6 +430,10 @@ static bool parse_primary(gml_parser *p, double *out) {
             gml_instance_destroy();
             *out = 1; return true;
         }
+        if (strcmp(id, "distance_to_object") == 0) {
+            *out = gml_distance_to_object(arg);
+            return true;
+        }
         if (strcmp(id, "instance_nearest") == 0) {
             *out = gml_instance_nearest(args[0], args[1], (nargs>=3)?args[2]:-1);
             return true;

@@ -5,3 +5,7 @@
 ## 2026-10-07 - Fast 2D AABB Early Exit in Line Collisions
 **Learning:** Precomputing line segment bounding boxes before iterating instances in `gml_collision_line` avoids running expensive parametric ray clipping (`line_aabb_overlap`) for instances outside the segment's 2D extent. However, strict inequalities (`o->x + ow < min_lx || o->x > max_lx`) must be used for AABB disjointness checks to prevent false rejections on vertical or horizontal lines where `min_lx == max_lx`.
 **Action:** Always precompute query bounding boxes outside instance collision loops, and use strict inequalities (`<` and `>`) for AABB range disjointness tests.
+
+## 2026-10-08 - Defer Sqrt in Spatial Range Queries
+**Learning:** Functions like `gml_distance_to_object` scanning all active instances previously ran `sqrt(dx*dx + dy*dy)` on every iteration. Since $f(d) = d^2$ is strictly monotonic for non-negative distances, comparing $d^2$ in the loop and calling `sqrt()` once on `best_sq` at the return point eliminates $N-1$ `sqrt()` calls per invocation without losing precision.
+**Action:** Always maintain squared distance aggregators (`d_sq = dx*dx + dy*dy`) during instance searches, deferring `sqrt()` until returning final results.
