@@ -22,6 +22,21 @@ static int is_dir(const char *path) {
     return S_ISDIR(st.st_mode);
 }
 
+static int count_dir_entries(const char *base_path, const char *subfolder) {
+    char full_path[1024];
+    snprintf(full_path, sizeof(full_path), "%s/%s", base_path, subfolder);
+    DIR *d = opendir(full_path);
+    if (!d) return 0;
+    int count = 0;
+    struct dirent *dir;
+    while ((dir = readdir(d)) != NULL) {
+        if (dir->d_name[0] == '.') continue;
+        count++;
+    }
+    closedir(d);
+    return count;
+}
+
 gm82_text_load_result gm82_text_load_project(const char *path) {
     gm82_text_load_result r;
     memset(&r, 0, sizeof(r));
@@ -44,20 +59,51 @@ gm82_text_load_result gm82_text_load_project(const char *path) {
     /* Very small heuristic: if path is a directory, look for common
        GM82 resource folders (sprites, backgrounds, rooms, objects). */
     if (is_dir(path)) {
-        /* Create one placeholder room so the IR is non-empty.
-           Real resource enumeration will walk the folders later. */
-        ir->room_count = 1;
-        ir->rooms = (gm82_res_room *)calloc(1, sizeof(gm82_res_room));
-        if (ir->rooms) {
-            ir->rooms[0].id = 0;
-            ir->rooms[0].name = strdup("room0");
-            ir->rooms[0].width = 640;
-            ir->rooms[0].height = 480;
-            ir->rooms[0].speed = 30;
-            ir->rooms[0].status = GM82_RES_PARTIAL;
+        ir->sprite_count     = count_dir_entries(path, "sprites");
+        ir->object_count     = count_dir_entries(path, "objects");
+        ir->sound_count      = count_dir_entries(path, "sounds");
+        ir->script_count     = count_dir_entries(path, "scripts");
+        ir->background_count = count_dir_entries(path, "backgrounds");
+
+        int rm_cnt = count_dir_entries(path, "rooms");
+        if (rm_cnt > 0) {
+            ir->room_count = rm_cnt;
+            ir->rooms = (gm82_res_room *)calloc(rm_cnt, sizeof(gm82_res_room));
+            if (ir->rooms) {
+                char full_path[1024];
+                snprintf(full_path, sizeof(full_path), "%s/rooms", path);
+                DIR *d = opendir(full_path);
+                if (d) {
+                    struct dirent *dir;
+                    int idx = 0;
+                    while ((dir = readdir(d)) != NULL && idx < rm_cnt) {
+                        if (dir->d_name[0] == '.') continue;
+                        ir->rooms[idx].id = idx;
+                        ir->rooms[idx].name = strdup(dir->d_name);
+                        ir->rooms[idx].width = 640;
+                        ir->rooms[idx].height = 480;
+                        ir->rooms[idx].speed = 30;
+                        ir->rooms[idx].status = GM82_RES_PARTIAL;
+                        idx++;
+                    }
+                    closedir(d);
+                }
+            }
+        } else {
+            ir->room_count = 1;
+            ir->rooms = (gm82_res_room *)calloc(1, sizeof(gm82_res_room));
+            if (ir->rooms) {
+                ir->rooms[0].id = 0;
+                ir->rooms[0].name = strdup("room0");
+                ir->rooms[0].width = 640;
+                ir->rooms[0].height = 480;
+                ir->rooms[0].speed = 30;
+                ir->rooms[0].status = GM82_RES_PARTIAL;
+            }
         }
         snprintf(r.error, sizeof(r.error),
-                 "GM82 directory project loaded (partial) – full text parse not yet implemented");
+                 "GM82 directory project loaded (sprites=%d, objs=%d, rms=%d)",
+                 ir->sprite_count, ir->object_count, ir->room_count);
     } else {
         /* Single file – treat as index / main project file.
            Content parsing is still TODO. */
